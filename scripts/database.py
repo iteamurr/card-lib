@@ -27,7 +27,7 @@ class Create:
         )
 
         cursor = connection.cursor()
-        cursor.execute(f'''CREATE TABLE messages
+        cursor.execute('''CREATE TABLE messages
             (id serial PRIMARY KEY, locale text,
             data text, message text);''')
 
@@ -37,7 +37,7 @@ class Create:
 
     def users_db(self, name='bot_users'):
         '''Creating a database of bot users.
-        
+
         Parameters
         ----------
         name : str
@@ -51,11 +51,11 @@ class Create:
         )
 
         cursor = connection.cursor()
-        cursor.execute(f'''CREATE TABLE users
+        cursor.execute('''CREATE TABLE users
             (id serial PRIMARY KEY, user_id integer,
-            username text, menu_id integer,
-            action integer, session text, 
-            collections integer, cards integer);''')
+            username text, locale text,
+            collections integer, cards integer,
+            menu_id integer, session text);''')
 
         connection.commit()
         cursor.close()
@@ -63,12 +63,12 @@ class Create:
 
 
 class Insert:
-    def __init__(self, user, password, name,
+    def __init__(self, name, user, password,
                  host='localhost', port='5432'):
+        self.db_name = name
+
         self.db_user = user
         self.db_password = password
-
-        self.db_name = name
 
         self.db_host = host
         self.db_port = port
@@ -94,8 +94,35 @@ class Insert:
         )
 
         cursor = connection.cursor()
-        cursor.execute(f'''INSERT INTO messages (locale, data, message)
-            VALUES (%s, %s, $s);''', (locale, data, message))
+        cursor.execute('''
+            INSERT INTO messages (locale, data, message)
+            VALUES (%s, %s, %s);''', (locale, data, message))
+
+        connection.commit()
+        cursor.close()
+        connection.close()
+
+    def new_user(self, user_id, username, locale, menu_id):
+        '''Inserting a new user to the database.
+        '''
+
+        connection = psycopg2.connect(
+            dbname=self.db_name,
+            user=self.db_user, password=self.db_password,
+            host=self.db_host, port=self.db_port
+        )
+
+        cursor = connection.cursor()
+        cursor.execute('''
+            INSERT INTO users (user_id, username, locale,
+                               collections, cards,
+                               menu_id, session)
+            VALUES (%s, %s, %s,
+                    %s, %s,
+                    %s, %s);''',
+            (user_id, username, locale,
+            0, 0,
+            menu_id, None))
 
         connection.commit()
         cursor.close()
@@ -103,12 +130,12 @@ class Insert:
 
 
 class Select:
-    def __init__(self, user, password, name,
+    def __init__(self, name, user, password,
                  host='localhost', port='5432'):
+        self.db_name = name
+
         self.db_user = user
         self.db_password = password
-
-        self.db_name = name
 
         self.db_host = host
         self.db_port = port
@@ -137,11 +164,43 @@ class Select:
         )
 
         cursor = connection.cursor()
-        cursor.execute(f'''SELECT message FROM messages
+        cursor.execute('''
+            SELECT message FROM messages
             WHERE locale=%s AND data=%s;''', (locale, data))
-        message = cursor.fetchone()
+        message = cursor.fetchone()[0]
 
         cursor.close()
         connection.close()
 
-        return message[0]
+        return message
+
+    def get_user_attributes(self, user_id):
+        '''Getting all user attributes.
+
+        Parameters
+        ----------
+        user_id : int
+            A unique ID for each user.
+        
+        Returns
+        -------
+        attributes : tuple
+            All user attributes.
+        '''
+
+        connection = psycopg2.connect(
+            dbname=self.db_name,
+            user=self.db_user, password=self.db_password,
+            host=self.db_host, port=self.db_port
+        )
+
+        cursor = connection.cursor()
+        cursor.execute('''
+            SELECT * FROM users
+            WHERE user_id=%s;''', (user_id, ))
+        attributes = cursor.fetchone()
+
+        cursor.close()
+        connection.close()
+
+        return attributes
