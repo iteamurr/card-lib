@@ -19,7 +19,8 @@ def get_new_message():
         JSON_result = request.get_json()
 
         save_message(JSON_result) # Debug
-        bot.message_handler(JSON_result)
+        message_handler = bot.MessageHandler(JSON_result)
+        message_handler.handler()
 
         return jsonify(JSON_result)
     return '<h1>Error!</h1>'
