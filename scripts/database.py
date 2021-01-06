@@ -104,6 +104,18 @@ class Insert:
 
     def new_user(self, user_id, username, locale, menu_id):
         '''Inserting a new user to the database.
+
+        Parameters
+        ----------
+        user_id : str
+            A unique ID for each user.
+        username : str
+            Short username in Telegram.
+        locale : str
+            Language of the message.
+        menu_id : str
+            Unique message ID of the user's
+            private office menu.
         '''
 
         connection = psycopg2.connect(
@@ -140,7 +152,7 @@ class Select:
         self.db_host = host
         self.db_port = port
 
-    def get_bot_message(self, data, locale='ru'):
+    def bot_message(self, data, locale='ru'):
         '''Getting a bot message from the database.
         
         Parameters
@@ -174,14 +186,14 @@ class Select:
 
         return message
 
-    def get_user_attributes(self, user_id):
+    def user_attributes(self, user_id):
         '''Getting all user attributes.
 
         Parameters
         ----------
         user_id : int
             A unique ID for each user.
-        
+
         Returns
         -------
         attributes : tuple

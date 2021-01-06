@@ -42,7 +42,7 @@ class MessageHandler:
             user=config.DB_USER, password=config.DB_PASSWORD,
             host=config.HOST, port=config.PORT)
 
-        user_existence = db_select.get_user_attributes(chat_id)
+        user_existence = db_select.user_attributes(chat_id)
 
         if not user_existence:
             user_menu_id = message['message_id']
@@ -73,20 +73,20 @@ class SendMenu:
             user=config.DB_USER, password=config.DB_PASSWORD,
             host=config.HOST, port=config.PORT)
 
-        locale = db_select_user_locale.get_user_attributes(self.chat_id)[3]
+        locale = db_select_user_locale.user_attributes(self.chat_id)[3]
 
         db_select_message = db.Select(
             name='bot_messages',
             user=config.DB_USER, password=config.DB_PASSWORD,
             host=config.HOST, port=config.PORT)
 
-        menu_text = db_select_message.get_bot_message(
+        menu_text = db_select_message.bot_message(
             data='private_office', locale=locale)
 
-        settings_menu_name = db_select_message.get_bot_message(
+        settings_menu_name = db_select_message.bot_message(
             data='settings', locale=locale)
 
-        collections_menu_name = db_select_message.get_bot_message(
+        collections_menu_name = db_select_message.bot_message(
             data='collections', locale=locale)
 
         url, response = tools.response_creator(
