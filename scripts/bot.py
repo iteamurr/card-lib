@@ -179,7 +179,7 @@ class Menu:
         ----------
         locale : str
             A key unique to each message.
-        menu_list
+        *menu_list
             List of menus to get names.
 
         Returns
