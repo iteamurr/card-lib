@@ -75,7 +75,7 @@ class Insert:
 
     def new_bot_message(self, data, message, locale='ru'):
         '''Inserting a new bot message to the database.
-        
+
         Parameters
         ----------
         data : str
@@ -107,13 +107,13 @@ class Insert:
 
         Parameters
         ----------
-        user_id : str
+        user_id : int
             A unique ID for each user.
         username : str
             Short username in Telegram.
         locale : str
             Language of the message.
-        menu_id : str
+        menu_id : int
             Unique message ID of the user's
             private office menu.
         '''
@@ -154,14 +154,14 @@ class Select:
 
     def bot_message(self, data, locale='ru'):
         '''Getting a bot message from the database.
-        
+
         Parameters
         ----------
         data : str
             A key unique to each message.
         locale : str
             Language of the message (default is 'ru').
-        
+
         Returns
         -------
         message : str
