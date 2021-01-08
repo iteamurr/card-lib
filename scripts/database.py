@@ -1,10 +1,31 @@
+# -*- coding: utf-8 -*-
+'''Module responsible for working with the database.
+'''
+
 # PostgreSQL
 import psycopg2
 
 
 class Create:
+    '''Database creation.
+    '''
+
     def __init__(self, user, password,
-                 host='localhost', port='5432'):
+                 host='localhost', port=5432):
+        '''Data required to initialize the database.
+
+        Parameters
+        ----------
+        user : str
+            Database user.
+        password : str
+            Database user password.
+        host : str
+            Host on which the database is hosted (default is 'localhost').
+        port : int
+            Database port (default is 5432).
+        '''
+
         self.user = user
         self.password = password
 
@@ -63,8 +84,30 @@ class Create:
 
 
 class Insert:
+    '''Inserting to the database.
+    '''
+
+    # pylint: disable=too-many-arguments
+    # All arguments are required
+    # for the database to work correctly.
     def __init__(self, name, user, password,
-                 host='localhost', port='5432'):
+                 host='localhost', port=5432):
+        '''Data required to initialize the database.
+
+        Parameters
+        ----------
+        name : str
+            Database name.
+        user : str
+            Database user.
+        password : str
+            Database user password.
+        host : str
+            Host on which the database is hosted (default is 'localhost').
+        port : int
+            Database port (default is 5432).
+        '''
+
         self.db_name = name
 
         self.db_user = user
@@ -142,8 +185,30 @@ class Insert:
 
 
 class Select:
+    '''Selecting data from the database.
+    '''
+
+    # pylint: disable=too-many-arguments
+    # All arguments are required
+    # for the database to work correctly.
     def __init__(self, name, user, password,
-                 host='localhost', port='5432'):
+                 host='localhost', port=5432):
+        '''Data required to initialize the database.
+
+        Parameters
+        ----------
+        name : str
+            Database name.
+        user : str
+            Database user.
+        password : str
+            Database user password.
+        host : str
+            Host on which the database is hosted (default is 'localhost').
+        port : int
+            Database port (default is 5432).
+        '''
+
         self.db_name = name
 
         self.db_user = user

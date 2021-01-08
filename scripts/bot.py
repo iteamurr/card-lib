@@ -1,28 +1,36 @@
+# -*- coding: utf-8 -*-
+'''Module responsible for processing the user's message
+and sending him a response.
+'''
+
 # Other imports
+import json
 import requests
 
 # Project imports
-import tools
-import config
-import database as db
+import scripts.tools as tools
+import scripts.database as db
 
 
 class Handler:
-    def handler(self, JSON):
+    '''Determining the essence of the message.
+    '''
+
+    def handler(self, request):
         '''Checking a message for a request type.
 
         Parameters
         ----------
-        JSON : JSON
-            This object represents a message.
+        request : JSON
+            Object representing the message.
         '''
 
-        if 'message' in JSON:
-            message = JSON['message']
+        if 'message' in request:
+            message = request['message']
             self.message_handler(message)
 
-        elif 'callback_query' in JSON:
-            callback_query = JSON['callback_query']
+        elif 'callback_query' in request:
+            callback_query = request['callback_query']
             self.callback_query_handler(callback_query)
 
     def message_handler(self, message):
@@ -64,7 +72,8 @@ class Handler:
         if data == 'settings':
             switch_menu.settings(message_id)
 
-    def _check_new_user(self, message):
+    @staticmethod
+    def _check_new_user(message):
         '''Checking for the presence of a user in the database.
         If there is no user, write it to the database.
 
@@ -74,13 +83,20 @@ class Handler:
             Message content.
         '''
 
-        chat_id = message['chat']['id']
+        with open('config.json') as config_json:
+            config = json.load(config_json)
+            db_name = config['database']['db'][1]
+            db_user = config['database']['user']
+            db_password = config['database']['passwd']
+            db_host = config['database']['host']
+            db_port = config['database']['port']
 
         db_select = db.Select(
-            name='bot_users',
-            user=config.DB_USER, password=config.DB_PASSWORD,
-            host=config.HOST, port=config.PORT)
+            name=db_name,
+            user=db_user, password=db_password,
+            host=db_host, port=db_port)
 
+        chat_id = message['chat']['id']
         user_existence = db_select.user_attributes(chat_id)
 
         if not user_existence:
@@ -90,9 +106,9 @@ class Handler:
             user_locale = locale if locale in ['en', 'ru'] else 'en'
 
             db_insert = db.Insert(
-                name='bot_users',
-                user=config.DB_USER, password=config.DB_PASSWORD,
-                host=config.HOST, port=config.PORT)
+                name=db_name,
+                user=db_user, password=db_password,
+                host=db_host, port=db_port)
 
             db_insert.new_user(
                 user_id=chat_id, username=username,
@@ -100,6 +116,10 @@ class Handler:
 
 
 class Menu:
+    '''Create a message (send or edit) which I call "Menu".
+    It contains buttons that the user can use to navigate the bot.
+    '''
+
     def __init__(self, chat_id):
         self.chat_id = chat_id
 
@@ -107,7 +127,11 @@ class Menu:
         '''Sending a personal user menu.
         '''
 
-        locale = self._get_user_locale()
+        locale = self._get_user_locale(self.chat_id)
+
+        # pylint: disable=unbalanced-tuple-unpacking
+        # _get_menu_name will definitely return as many name
+        # values as you passed data to it.
         menu, collections, settings = self._get_menu_name(
             locale, 'private_office', 'collections', 'settings')
 
@@ -133,7 +157,11 @@ class Menu:
             Unique message id.
         '''
 
-        locale = self._get_user_locale()
+        locale = self._get_user_locale(self.chat_id)
+
+        # pylint: disable=unbalanced-tuple-unpacking
+        # _get_menu_name will definitely return as many name
+        # values as you passed data to it.
         menu, locale_settings, back = self._get_menu_name(
             locale, 'settings', 'locale_settings', 'back')
 
@@ -154,25 +182,35 @@ class Menu:
         data = {**response, **keyboard}
         requests.post(url, json=data)
 
-    def _get_user_locale(self):
+    @staticmethod
+    def _get_user_locale(chat_id):
         '''Getting user language settings.
 
         Returns
         -------
-        locale : str
-            User locale.
+        chat_id : int
+            Unique user id.
         '''
 
-        db_select_user_locale = db.Select(
-            name='bot_users',
-            user=config.DB_USER, password=config.DB_PASSWORD,
-            host=config.HOST, port=config.PORT)
+        with open('config.json') as config_json:
+            config = json.load(config_json)
+            db_name = config['database']['db'][1]
+            db_user = config['database']['user']
+            db_password = config['database']['passwd']
+            db_host = config['database']['host']
+            db_port = config['database']['port']
 
-        locale = db_select_user_locale.user_attributes(self.chat_id)[3]
+        db_select_user_locale = db.Select(
+            name=db_name,
+            user=db_user, password=db_password,
+            host=db_host, port=db_port)
+
+        locale = db_select_user_locale.user_attributes(chat_id)[3]
 
         return locale
 
-    def _get_menu_name(self, locale, *menu_list):
+    @staticmethod
+    def _get_menu_name(locale, *menu_list):
         '''Retrieving menu names from the database.
 
         Parameters
@@ -188,10 +226,18 @@ class Menu:
             List of menu names.
         '''
 
+        with open('config.json') as config_json:
+            config = json.load(config_json)
+            db_name = config['database']['db'][1]
+            db_user = config['database']['user']
+            db_password = config['database']['passwd']
+            db_host = config['database']['host']
+            db_port = config['database']['port']
+
         db_select_message = db.Select(
-            name='bot_messages',
-            user=config.DB_USER, password=config.DB_PASSWORD,
-            host=config.HOST, port=config.PORT)
+            name=db_name,
+            user=db_user, password=db_password,
+            host=db_host, port=db_port)
 
         menu_names = []
         for data in menu_list:

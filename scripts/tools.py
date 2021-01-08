@@ -1,5 +1,14 @@
-# Project imports
-import config
+# -*- coding: utf-8 -*-
+'''Module with auxiliary tools for creating some structures.
+'''
+
+# Other imports
+import json
+
+with open('config.json') as config_json:
+    config = json.load(config_json)
+    token = config['telegram']['token']
+    telegram_url = config['telegram']['url']
 
 
 def response_creator(command, chat_id, text,
@@ -14,36 +23,36 @@ def response_creator(command, chat_id, text,
         Unique user id.
     text : str
         The text to be wrapped.
-    message_id : int
-        Unique message id (default is None).
-    parse_mode : str
+    message_id : int, optional
+        Unique message id.
+    parse_mode : str, optional
         Way to format text (default is 'MarkdownV2').
 
     Returns
     -------
     url : str
         Link to send a message.
-    JSON_response : JSON
+    json_response : JSON
         Extending the message.
     '''
 
-    url = config.URL.format(token=config.TOKEN, command=command)
+    url = telegram_url.format(token=token, command=command)
 
     if message_id:
-        JSON_response = {
+        json_response = {
             'chat_id': chat_id,
             'message_id': message_id,
             'text': text,
             'parse_mode': parse_mode
         }
     else:
-        JSON_response = {
+        json_response = {
             'chat_id': chat_id,
             'text': text,
             'parse_mode': parse_mode
         }
 
-    return url, JSON_response
+    return url, json_response
 
 
 def inline_keyboard_creator(*button_data_list):
@@ -61,10 +70,10 @@ def inline_keyboard_creator(*button_data_list):
     '''
 
     keyboard = {
-        'reply_markup': 
-            {
-                'inline_keyboard': []
-            }
+        "reply_markup":{
+            "inline_keyboard":[
+            ]
+        }
     }
 
     button_index = 0
