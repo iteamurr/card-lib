@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 '''Program entry point.
 
-The model receives messages from the Telegram
+Module receives messages from the Telegram
 and passes further instructions to the bot.py module.
 '''
 
