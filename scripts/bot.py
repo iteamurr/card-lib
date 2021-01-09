@@ -4,12 +4,11 @@ and sending him a response.
 '''
 
 # Other imports
-import json
 import requests
 
 # Project imports
-import scripts.tools as tools
-import scripts.database as db
+# pylint: disable=import-error
+from tools import API, BotTools
 
 
 class Handler:
@@ -27,13 +26,14 @@ class Handler:
 
         if 'message' in request:
             message = request['message']
-            self.message_handler(message)
+            self._message_handler(message)
 
         elif 'callback_query' in request:
             callback_query = request['callback_query']
-            self.callback_query_handler(callback_query)
+            self._callback_query_handler(callback_query)
 
-    def message_handler(self, message):
+    @staticmethod
+    def _message_handler(message):
         '''Work with a simple message.
 
         Parameters
@@ -45,16 +45,19 @@ class Handler:
         chat_id = message['chat']['id']
         message_text = message['text']
 
-        send_menu = Menu(chat_id)
+        send_menu = SendMenu(chat_id)
         if 'entities' in message:
             message_entities = message['entities']
 
             if message_entities[0]['type'] == 'bot_command':
                 if '/start' in message_text:
-                    self._check_new_user(message)
+                    BotTools.check_new_user(message)
                     send_menu.private_office()
+                elif '/settings' in message_text:
+                    send_menu.settings()
 
-    def callback_query_handler(self, callback_query):
+    @staticmethod
+    def _callback_query_handler(callback_query):
         '''Work with inline message.
 
         Parameters
@@ -65,80 +68,41 @@ class Handler:
         '''
 
         data = callback_query['data']
+        callback_id = callback_query['id']
+
         chat_id = callback_query['from']['id']
         message_id = callback_query['message']['message_id']
 
-        switch_menu = Menu(chat_id)
+        switch_menu = SwitchMenu(chat_id, message_id, callback_id)
         if data == 'settings':
-            switch_menu.settings(message_id)
-
-    @staticmethod
-    def _check_new_user(message):
-        '''Checking for the presence of a user in the database.
-        If there is no user, write it to the database.
-
-        Parameters
-        ----------
-        message : JSON
-            Message content.
-        '''
-
-        with open('config.json') as config_json:
-            config = json.load(config_json)
-            db_name = config['database']['db'][1]
-            db_user = config['database']['user']
-            db_password = config['database']['passwd']
-            db_host = config['database']['host']
-            db_port = config['database']['port']
-
-        db_select = db.Select(
-            name=db_name,
-            user=db_user, password=db_password,
-            host=db_host, port=db_port)
-
-        chat_id = message['chat']['id']
-        user_existence = db_select.user_attributes(chat_id)
-
-        if not user_existence:
-            user_menu_id = message['message_id']
-            username = message['from']['username']
-            locale = message['from']['language_code']
-            user_locale = locale if locale in ['en', 'ru'] else 'en'
-
-            db_insert = db.Insert(
-                name=db_name,
-                user=db_user, password=db_password,
-                host=db_host, port=db_port)
-
-            db_insert.new_user(
-                user_id=chat_id, username=username,
-                locale=user_locale, menu_id=user_menu_id)
+            switch_menu.settings()
+        elif data == 'private_office':
+            switch_menu.private_office()
+        elif data == 'locale_settings':
+            switch_menu.locale_settings()
 
 
-class Menu:
-    '''Create a message (send or edit) which I call "Menu".
-    It contains buttons that the user can use to navigate the bot.
+class SendMenu:
+    '''Send the user a menu used for navigation.
     '''
 
     def __init__(self, chat_id):
         self.chat_id = chat_id
 
     def private_office(self):
-        '''Sending a personal user menu.
+        '''Sending personal user menu.
         '''
 
-        locale = self._get_user_locale(self.chat_id)
+        locale = BotTools.get_user_locale(self.chat_id)
 
         # pylint: disable=unbalanced-tuple-unpacking
-        # _get_menu_name will definitely return as many name
-        # values as you passed data to it.
-        menu, collections, settings = self._get_menu_name(
+        # BotTools.get_menu_name will definitely return
+        # as many name values as you passed data to it.
+        menu, collections, settings = BotTools.get_menu_name(
             locale, 'private_office', 'collections', 'settings')
 
-        url, response = tools.response_creator(
-            command='sendMessage', chat_id=self.chat_id, text=menu)
-
-        keyboard = tools.inline_keyboard_creator(
+        url, response = API.send_message(self.chat_id, menu)
+        keyboard = API.inline_keyboard(
             [
                 [collections, 'collections'],
                 [settings, 'settings']
@@ -148,29 +112,20 @@ class Menu:
         data = {**response, **keyboard}
         requests.post(url, json=data)
 
-    def settings(self, message_id):
-        '''Changing the current menu to the settings menu.
-
-        Parameters
-        ----------
-        message_id : int
-            Unique message id.
+    def settings(self):
+        '''Sending settings menu.
         '''
 
-        locale = self._get_user_locale(self.chat_id)
+        locale = BotTools.get_user_locale(self.chat_id)
 
         # pylint: disable=unbalanced-tuple-unpacking
-        # _get_menu_name will definitely return as many name
-        # values as you passed data to it.
-        menu, locale_settings, back = self._get_menu_name(
+        # BotTools.get_menu_name will definitely return
+        # as many name values as you passed data to it.
+        menu, locale_settings, back = BotTools.get_menu_name(
             locale, 'settings', 'locale_settings', 'back')
 
-        url, response = tools.response_creator(
-            command='editMessageText',
-            chat_id=self.chat_id, text=menu,
-            message_id=message_id)
-
-        keyboard = tools.inline_keyboard_creator(
+        url, response = API.send_message(self.chat_id, menu)
+        keyboard = API.inline_keyboard(
             [
                 [locale_settings, 'locale_settings']
             ],
@@ -182,66 +137,100 @@ class Menu:
         data = {**response, **keyboard}
         requests.post(url, json=data)
 
-    @staticmethod
-    def _get_user_locale(chat_id):
-        '''Getting user language settings.
 
-        Returns
-        -------
-        chat_id : int
-            Unique user id.
+class SwitchMenu:
+    '''Changing the current menu to a new one.
+    '''
+
+    def __init__(self, chat_id, message_id, callback_id):
+        self.chat_id = chat_id
+        self.message_id = message_id
+        self.callback_id = callback_id
+
+    def private_office(self):
+        '''Changing the current menu to user menu.
         '''
 
-        with open('config.json') as config_json:
-            config = json.load(config_json)
-            db_name = config['database']['db'][1]
-            db_user = config['database']['user']
-            db_password = config['database']['passwd']
-            db_host = config['database']['host']
-            db_port = config['database']['port']
+        locale = BotTools.get_user_locale(self.chat_id)
 
-        db_select_user_locale = db.Select(
-            name=db_name,
-            user=db_user, password=db_password,
-            host=db_host, port=db_port)
+        # pylint: disable=unbalanced-tuple-unpacking
+        # BotTools.get_menu_name will definitely return
+        # as many name values as you passed data to it.
+        menu, collections, settings = BotTools.get_menu_name(
+            locale, 'private_office', 'collections', 'settings')
 
-        locale = db_select_user_locale.user_attributes(chat_id)[3]
+        url, response = API.edit_message(self.chat_id, self.message_id, menu)
+        callback_url, answer = API.answer_callback_query(self.callback_id)
+        keyboard = API.inline_keyboard(
+            [
+                [collections, 'collections'],
+                [settings, 'settings']
+            ]
+        )
 
-        return locale
+        data = {**response, **keyboard}
+        requests.post(url, json=data)
+        requests.post(callback_url, json=answer)
 
-    @staticmethod
-    def _get_menu_name(locale, *menu_list):
-        '''Retrieving menu names from the database.
-
-        Parameters
-        ----------
-        locale : str
-            A key unique to each message.
-        *menu_list
-            List of menus to get names.
-
-        Returns
-        -------
-        menu_names : list
-            List of menu names.
+    def settings(self):
+        '''Changing the current menu to settings menu.
         '''
 
-        with open('config.json') as config_json:
-            config = json.load(config_json)
-            db_name = config['database']['db'][1]
-            db_user = config['database']['user']
-            db_password = config['database']['passwd']
-            db_host = config['database']['host']
-            db_port = config['database']['port']
+        locale = BotTools.get_user_locale(self.chat_id)
 
-        db_select_message = db.Select(
-            name=db_name,
-            user=db_user, password=db_password,
-            host=db_host, port=db_port)
+        # pylint: disable=unbalanced-tuple-unpacking
+        # BotTools.get_menu_name will definitely return
+        # as many name values as you passed data to it.
+        menu, locale_settings, back = BotTools.get_menu_name(
+            locale, 'settings', 'locale_settings', 'back')
 
-        menu_names = []
-        for data in menu_list:
-            menu_name = db_select_message.bot_message(data, locale)
-            menu_names.append(menu_name)
+        url, response = API.edit_message(self.chat_id, self.message_id, menu)
+        callback_url, answer = API.answer_callback_query(self.callback_id)
+        keyboard = API.inline_keyboard(
+            [
+                [locale_settings, 'locale_settings']
+            ],
+            [
+                [back, 'private_office']
+            ]
+        )
 
-        return menu_names
+        data = {**response, **keyboard}
+        requests.post(url, json=data)
+        requests.post(callback_url, json=answer)
+
+    def locale_settings(self):
+        '''Changing the current menu to language settings menu.
+        '''
+
+        locale = BotTools.get_user_locale(self.chat_id)
+
+        # pylint: disable=unbalanced-tuple-unpacking
+        # BotTools.get_menu_name will definitely return
+        # as many name values as you passed data to it.
+        menu, en_locale, ru_locale, main, back = BotTools.get_menu_name(
+            locale,
+            'current_language',
+            'change_language_to_en',
+            'change_language_to_ru',
+            'main',
+            'back'
+        )
+
+        menu = menu.format({'en': 'English', 'ru': 'Russian'}[locale])
+        url, response = API.edit_message(self.chat_id, self.message_id, menu)
+        callback_url, answer = API.answer_callback_query(self.callback_id)
+        keyboard = API.inline_keyboard(
+            [
+                [en_locale, 'change_language_to_en'],
+                [ru_locale, 'change_language_to_ru']
+            ],
+            [
+                [main, 'private_office'],
+                [back, 'settings']
+            ]
+        )
+
+        data = {**response, **keyboard}
+        requests.post(url, json=data)
+        requests.post(callback_url, json=answer)
