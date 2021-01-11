@@ -7,10 +7,6 @@
         "host":"localhost",
         "port":5432,
         "user":"postgres",
-        "passwd":"postgres",
-        "db":[
-            "bot_messages",
-            "bot_users"
-        ]
+        "passwd":"postgres"
     }
 }
