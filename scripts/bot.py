@@ -6,7 +6,7 @@
 import requests
 
 from tools import API, Tools
-from database import Select
+from database import Select, Update
 
 
 class Handler:
@@ -38,8 +38,8 @@ class Handler:
     @staticmethod
     def _callback_query_handler(callback_query):
         data = callback_query["data"]
-        callback_id = callback_query["id"]
 
+        callback_id = callback_query["id"]
         chat_id = callback_query["from"]["id"]
         message_id = callback_query["message"]["message_id"]
 
@@ -48,8 +48,11 @@ class Handler:
             switch_menu.settings()
         elif data == "private_office":
             switch_menu.private_office()
-        elif data == "locale_settings":
-            switch_menu.locale_settings()
+        elif "locale" in data:
+            if data == "locale_settings":
+                switch_menu.locale_settings()
+            else:
+                switch_menu.change_locale(data)
 
 
 class SendMenu:
@@ -57,50 +60,42 @@ class SendMenu:
         self.chat_id = chat_id
 
     def private_office(self):
-        url, structure = self._wrapper(
-            {
-                "HEAD":"private_office",
-                "BUTTONS":[
-                    [
-                        ["collections", "collections"],
-                        ["settings", "settings"]
-                    ]
-                ]
-            }
-        )
+        buttons = [
+            [
+                ["collections", "collections"],
+                ["settings", "settings"]
+            ]
+        ]
 
+        url, structure = self._wrapper("private_office", buttons)
         requests.post(url, json=structure)
 
     def settings(self):
-        url, structure = self._wrapper(
-            {
-                "HEAD":"settings",
-                "BUTTONS":[
-                    [
-                        ["locale_settings", "locale_settings"]
-                    ],
-                    [
-                        ["back", "private_office"]
-                    ]
-                ]
-            }
-        )
+        buttons = [
+            [
+                ["locale_settings", "locale_settings"]
+            ],
+            [
+                ["back", "private_office"]
+            ]
+        ]
 
+        url, structure = self._wrapper("settings", buttons)
         requests.post(url, json=structure)
 
-    def _wrapper(self, menu):
+    def _wrapper(self, menu_name, buttons):
         with Select("bot_users") as select_locale:
             locale = select_locale.user_attributes(self.chat_id)[3]
 
         with Select("bot_messages") as select_message:
-            menu["HEAD"] = select_message.bot_message(menu["HEAD"], locale)
+            title = select_message.bot_message(menu_name, locale)
 
-            for button in menu["BUTTONS"]:
+            for button in buttons:
                 for data in button:
                     data[0] = select_message.bot_message(data[0], locale)
 
-        url, head = API.send_message(self.chat_id, menu["HEAD"])
-        keyboard = API.inline_keyboard(*menu["BUTTONS"])
+        url, head = API.send_message(self.chat_id, title)
+        keyboard = API.inline_keyboard(*buttons)
         structure = {**head, **keyboard}
 
         return url, structure
@@ -113,84 +108,84 @@ class SwitchMenu:
         self.callback_id = callback_id
 
     def private_office(self):
-        url, structure, callback_url, callback_answer = self._wrapper(
-            {
-                "HEAD":"private_office",
-                "BUTTONS":[
-                    [
-                        ["collections", "collections"],
-                        ["settings", "settings"]
-                    ]
-                ]
-            }
-        )
+        buttons = [
+            [
+                ["collections", "collections"],
+                ["settings", "settings"]
+            ]
+        ]
+
+        request, callback_request = self._wrapper("private_office", buttons)
+        url, structure = request
+        callback_url, callback_answer = callback_request
 
         requests.post(url, json=structure)
         requests.post(callback_url, json=callback_answer)
 
     def settings(self):
-        url, structure, callback_url, callback_answer = self._wrapper(
-            {
-                "HEAD":"settings",
-                "BUTTONS":[
-                    [
-                        ["locale_settings", "locale_settings"]
-                    ],
-                    [
-                        ["back", "private_office"]
-                    ]
-                ]
-            }
-        )
+        buttons = [
+            [
+                ["locale_settings", "locale_settings"]
+            ],
+            [
+                ["back", "private_office"]
+            ]
+        ]
+
+        request, callback_request = self._wrapper("settings", buttons)
+        url, structure = request
+        callback_url, callback_answer = callback_request
 
         requests.post(url, json=structure)
         requests.post(callback_url, json=callback_answer)
 
     def locale_settings(self):
-        with Select("bot_users") as select_locale:
-            locale = select_locale.user_attributes(self.chat_id)[3]
+        buttons = [
+            [
+                ["change_language_to_en", "en_locale"],
+                ["change_language_to_ru", "ru_locale"]
+            ],
+            [
+                ["main", "private_office"],
+                ["back", "settings"]
+            ]
+        ]
 
-        url, structure, callback_url, callback_answer = self._wrapper(
-            {
-                "HEAD":"current_language",
-                "BUTTONS":[
-                    [
-                        ["change_language_to_en", "en_locale"],
-                        ["change_language_to_ru", "ru_locale"]
-                    ],
-                    [
-                        ["main", "private_office"],
-                        ["back", "settings"]
-                    ]
-                ]
-            }
-        )
-        structure["text"] = structure["text"].format(
-            {"en": "English", "ru": "Russian"}[locale])
+        request, callback_request = self._wrapper("current_language", buttons)
+        url, structure = request
+        callback_url, callback_answer = callback_request
+
+        with Select("bot_users") as select_locale:
+            user_locale = select_locale.user_attributes(self.chat_id)[3]
+
+        locales = {"en": "English", "ru": "Русский"}
+        structure["text"] = structure["text"].format(locales[user_locale])
 
         requests.post(url, json=structure)
         requests.post(callback_url, json=callback_answer)
 
-    def _wrapper(self, menu):
+    def change_locale(self, data):
+        with Update("bot_users") as update_locale:
+            update_locale.user_attribute(self.chat_id, "locale", data[:2])
+
+        self.locale_settings()
+
+    def _wrapper(self, menu_name, buttons):
         with Select("bot_users") as select_locale:
             locale = select_locale.user_attributes(self.chat_id)[3]
 
         with Select("bot_messages") as select_message:
-            menu["HEAD"] = select_message.bot_message(menu["HEAD"], locale)
+            title = select_message.bot_message(menu_name, locale)
 
-            for button in menu["BUTTONS"]:
+            for button in buttons:
                 for data in button:
                     data[0] = select_message.bot_message(data[0], locale)
 
-        url, head = API.edit_message(
-            chat_id=self.chat_id,
-            message_id=self.message_id,
-            text=menu["HEAD"]
-        )
-        keyboard = API.inline_keyboard(*menu["BUTTONS"])
+        url, head = API.edit_message(self.chat_id, self.message_id, title)
+        keyboard = API.inline_keyboard(*buttons)
         structure = {**head, **keyboard}
 
         callback_url, callback_answer = API.answer_callback_query(
             callback_query_id=self.callback_id)
 
-        return url, structure, callback_url, callback_answer
+        return (url, structure), (callback_url, callback_answer)
