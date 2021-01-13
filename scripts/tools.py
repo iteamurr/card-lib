@@ -4,6 +4,8 @@
 # pylint: disable=missing-function-docstring
 
 import json
+import random
+import string
 
 from database import Select, Insert
 
@@ -93,7 +95,7 @@ class Tools:
     def check_new_user(message):
         chat_id = message["chat"]["id"]
         with Select("bot_users") as select_user:
-            user_existence = select_user.user_attributes(chat_id)
+            user_existence = select_user.user_attribute(chat_id, "locale")
 
         if not user_existence:
             menu_id = message["message_id"]
@@ -106,3 +108,13 @@ class Tools:
                     user_id=chat_id, username=username,
                     locale=user_locale, menu_id=menu_id
                 )
+
+    @staticmethod
+    def new_collection_key():
+        first_part = random.randrange(100000000, 1000000000)
+        second_part = random.randrange(1000000000, 10000000000)
+        third_part = random.choice(string.ascii_letters)
+
+        key = f"K-{first_part}-{second_part}-{third_part}-00000-CL"
+
+        return key
