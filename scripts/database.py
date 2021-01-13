@@ -48,7 +48,8 @@ class CreateTable:
                locale text,
                data text,
                message text
-            );"""
+            );
+            """
         )
 
     def bot_users(self):
@@ -62,7 +63,21 @@ class CreateTable:
                cards integer,
                menu_id integer,
                session text
-            );"""
+            );
+            """
+        )
+
+    def bot_collections(self):
+        self._cursor.execute(
+            """CREATE TABLE collections (
+               id serial PRIMARY KEY,
+               user_id integer,
+               key text,
+               name text,
+               description text,
+               cards integer
+            );
+            """
         )
 
 
@@ -121,6 +136,18 @@ class Insert:
             """, (user_id, username, locale, 0, 0, menu_id, None)
         )
 
+    def new_collection(self, user_id, key, name):
+        self._cursor.execute(
+            """INSERT INTO collections (
+               user_id,
+               key,
+               name,
+               description,
+               cards
+            ) VALUES (%s, %s, %s, %s, %s);
+            """, (user_id, key, name, None, 0)
+        )
+
 
 class Select:
     def __init__(self, db_name):
@@ -167,15 +194,34 @@ class Select:
         message = self._cursor.fetchone()[0]
         return message
 
-    def user_attributes(self, user_id):
+    def user_attribute(self, user_id, attribute):
         self._cursor.execute(
-            """SELECT * FROM users
-               WHERE user_id=%s;
+            sql.SQL(
+                "SELECT {} FROM users WHERE user_id=%s;"
+            ).format(sql.Identifier(attribute)), (user_id,)
+        )
+
+        attribute_value = self._cursor.fetchone()[0]
+        return attribute_value
+
+    def user_collections(self, user_id):
+        self._cursor.execute(
+            """SELECT * FROM collections WHERE user_id=%s;
             """, (user_id,)
         )
 
-        attributes = self._cursor.fetchone()
-        return attributes
+        collections = self._cursor.fetchall()
+        return collections
+
+    def collection_attribute(self, user_id, key, attribute):
+        self._cursor.execute(
+            sql.SQL(
+                "SELECT {} FROM collections WHERE user_id=%s AND key=%s;"
+            ).format(sql.Identifier(attribute)), (user_id, key)
+        )
+
+        attribute_value = self._cursor.fetchone()[0]
+        return attribute_value
 
 
 class Update:
@@ -215,6 +261,6 @@ class Update:
     def user_attribute(self, user_id, attribute, value):
         self._cursor.execute(
             sql.SQL(
-                "UPDATE users SET {}=%s WHERE user_id=%s"
+                "UPDATE users SET {}=%s WHERE user_id=%s;"
             ).format(sql.Identifier(attribute)), (value, user_id)
         )
