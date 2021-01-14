@@ -12,71 +12,50 @@ from database import Select, Insert
 
 
 class API:
-    @staticmethod
-    def send_message(chat_id, text, parse_mode=None):
+    def __init__(self):
         with open("config.json") as config_json:
             config = json.load(config_json)
-            token = config["telegram"]["token"]
-            telegram_url = config["telegram"]["url"]
+            self._token = config["telegram"]["token"]
+            self._url = config["telegram"]["url"]
 
-        api_url = telegram_url.format(token=token, command="sendMessage")
+    def send_message(self, chat_id, text, parse_mode=None):
+        request = {"url": '', "body": {}}
+        command = "sendMessage"
+        request["url"] = self._url.format(token=self._token, command=command)
+
+        request["body"] = {"chat_id": chat_id, "text": text}
         if parse_mode:
-            json_response = {
-                "chat_id": chat_id,
-                "text": text,
-                "parse_mode": parse_mode
-            }
-        else:
-            json_response = {
-                "chat_id": chat_id,
-                "text": text
-            }
+            request["body"]["parse_mode"] = parse_mode
 
-        return api_url, json_response
+        return request
 
-    @staticmethod
-    def edit_message(chat_id, message_id, text, parse_mode=None):
-        with open("config.json") as config_json:
-            config = json.load(config_json)
-            token = config["telegram"]["token"]
-            telegram_url = config["telegram"]["url"]
+    def edit_message(self, chat_id, message_id, text, parse_mode=None):
+        request = {"url": '', "body": {}}
+        command = "editMessageText"
+        request["url"] = self._url.format(token=self._token, command=command)
 
-        api_url = telegram_url.format(token=token, command="editMessageText")
+        request["body"] = {
+            "chat_id": chat_id,
+            "message_id": message_id,
+            "text": text
+        }
         if parse_mode:
-            json_response = {
-                "chat_id": chat_id,
-                "message_id": message_id,
-                "text": text,
-                "parse_mode": parse_mode
-            }
-        else:
-            json_response = {
-                "chat_id": chat_id,
-                "message_id": message_id,
-                "text": text
-            }
+            request["body"]["parse_mode"] = parse_mode
 
-        return api_url, json_response
+        return request
 
-    @staticmethod
-    def answer_callback_query(callback_query_id, text=None, show_alert=False):
-        with open("config.json") as config_json:
-            config = json.load(config_json)
-            token = config["telegram"]["token"]
-            telegram_url = config["telegram"]["url"]
-
+    def answer_callback_query(self, callback_query_id, 
+                              text=None, show_alert=False):
+        request = {"url": '', "body": {}}
         command = "answerCallbackQuery"
-        api_url = telegram_url.format(token=token, command=command)
-        if text:
-            json_response = {
-                "callback_query_id": callback_query_id,
-                "text": text,
-                "show_alert": show_alert
-            }
-        else:
-            json_response = {"callback_query_id": callback_query_id}
+        request["url"] = self._url.format(token=self._token, command=command)
 
-        return api_url, json_response
+        request["body"] = {"callback_query_id": callback_query_id}
+        if text:
+            request["body"]["text"] = text
+            request["body"]["show_alert"] = show_alert
+
+        return request
 
     @staticmethod
     def inline_keyboard(*button_data_list):
@@ -105,6 +84,7 @@ class Tools:
     @staticmethod
     def check_new_user(message):
         chat_id = message["chat"]["id"]
+
         with Select("bot_users") as select_user:
             user_existence = select_user.user_attribute(chat_id, "locale")
 
@@ -134,8 +114,9 @@ class Tools:
     def keyboard_creator(collections, buttons_in_layer=2):
         buttons = []
         collection_length = len(collections)
+        layers = ceil(collection_length/buttons_in_layer)
 
-        for layer in range(ceil(collection_length/buttons_in_layer)):
+        for layer in range(layers):
             buttons.append([])
             left_border = buttons_in_layer*layer
             right_border = buttons_in_layer*(layer+1)
@@ -150,10 +131,10 @@ class Tools:
         return buttons
 
     @staticmethod
-    def button_identifier(locale, buttons):
-        with Select("bot_messages") as select_message:
+    def button_identifier(buttons, locale='en'):
+        with Select("bot_messages") as select_button_title:
             for button in buttons:
                 for data in button:
-                    data[0] = select_message.bot_message(data[0], locale)
+                    data[0] = select_button_title.bot_message(data[0], locale)
 
         return buttons
