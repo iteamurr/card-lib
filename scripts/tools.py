@@ -6,41 +6,55 @@
 import json
 import random
 import string
+from math import ceil
 
 from database import Select, Insert
 
 
 class API:
     @staticmethod
-    def send_message(chat_id, text, parse_mode="MarkdownV2"):
+    def send_message(chat_id, text, parse_mode=None):
         with open("config.json") as config_json:
             config = json.load(config_json)
             token = config["telegram"]["token"]
             telegram_url = config["telegram"]["url"]
 
         api_url = telegram_url.format(token=token, command="sendMessage")
-        json_response = {
-            "chat_id": chat_id,
-            "text": text,
-            "parse_mode": parse_mode
-        }
+        if parse_mode:
+            json_response = {
+                "chat_id": chat_id,
+                "text": text,
+                "parse_mode": parse_mode
+            }
+        else:
+            json_response = {
+                "chat_id": chat_id,
+                "text": text
+            }
 
         return api_url, json_response
 
     @staticmethod
-    def edit_message(chat_id, message_id, text, parse_mode="MarkdownV2"):
+    def edit_message(chat_id, message_id, text, parse_mode=None):
         with open("config.json") as config_json:
             config = json.load(config_json)
             token = config["telegram"]["token"]
             telegram_url = config["telegram"]["url"]
 
         api_url = telegram_url.format(token=token, command="editMessageText")
-        json_response = {
-            "chat_id": chat_id,
-            "message_id": message_id,
-            "text": text,
-            "parse_mode": parse_mode
-        }
+        if parse_mode:
+            json_response = {
+                "chat_id": chat_id,
+                "message_id": message_id,
+                "text": text,
+                "parse_mode": parse_mode
+            }
+        else:
+            json_response = {
+                "chat_id": chat_id,
+                "message_id": message_id,
+                "text": text
+            }
 
         return api_url, json_response
 
@@ -51,19 +65,16 @@ class API:
             token = config["telegram"]["token"]
             telegram_url = config["telegram"]["url"]
 
-        api_url = telegram_url.format(
-            token=token, command="answerCallbackQuery")
-
-        if not text:
-            json_response = {
-                "callback_query_id": callback_query_id
-            }
-        else:
+        command = "answerCallbackQuery"
+        api_url = telegram_url.format(token=token, command=command)
+        if text:
             json_response = {
                 "callback_query_id": callback_query_id,
                 "text": text,
                 "show_alert": show_alert
             }
+        else:
+            json_response = {"callback_query_id": callback_query_id}
 
         return api_url, json_response
 
@@ -118,3 +129,31 @@ class Tools:
         key = f"K-{first_part}-{second_part}-{third_part}-00000-CL"
 
         return key
+
+    @staticmethod
+    def keyboard_creator(collections, buttons_in_layer=2):
+        buttons = []
+        collection_length = len(collections)
+
+        for layer in range(ceil(collection_length/buttons_in_layer)):
+            buttons.append([])
+            left_border = buttons_in_layer*layer
+            right_border = buttons_in_layer*(layer+1)
+
+            for collection in collections[left_border:right_border]:
+                collection_data = collection[2]
+                collection_name = collection[3]
+                button_data = [collection_name, collection_data]
+
+                buttons[layer].append(button_data)
+
+        return buttons
+
+    @staticmethod
+    def button_identifier(locale, buttons):
+        with Select("bot_messages") as select_message:
+            for button in buttons:
+                for data in button:
+                    data[0] = select_message.bot_message(data[0], locale)
+
+        return buttons
