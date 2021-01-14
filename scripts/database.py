@@ -115,7 +115,7 @@ class Insert:
         self._cursor.close()
         self._connection.close()
 
-    def new_bot_message(self, data, message, locale="ru"):
+    def new_bot_message(self, data, message, locale="en"):
         self._cursor.execute(
             """INSERT INTO messages (locale, data, message)
                VALUES (%s, %s, %s);
@@ -183,7 +183,7 @@ class Select:
         self._cursor.close()
         self._connection.close()
 
-    def bot_message(self, data, locale="ru"):
+    def bot_message(self, data, locale="en"):
         self._cursor.execute(
             """SELECT message FROM messages
                WHERE locale=%s AND
