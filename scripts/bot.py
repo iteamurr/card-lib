@@ -26,11 +26,10 @@ class Handler:
     @staticmethod
     def _message_handler(message):
         message_text = message["text"]
+        chat_id = message["chat"]["id"]
         message_entities = message["entities"]
 
-        chat_id = message["chat"]["id"]
         send_menu = SendMenu(chat_id)
-
         if message_entities[0]["type"] == "bot_command":
             if "/start" in message_text:
                 Tools.check_new_user(message)
@@ -42,14 +41,12 @@ class Handler:
     @staticmethod
     def _callback_query_handler(callback_query):
         data = callback_query["data"]
-
         callback_id = callback_query["id"]
         chat_id = callback_query["from"]["id"]
         message_id = callback_query["message"]["message_id"]
 
         user_interaction = UserInteraction(chat_id, callback_id)
         switch_menu = SwitchMenu(chat_id, message_id, callback_id)
-
         if data == "private_office":
             switch_menu.private_office()
 
@@ -72,13 +69,12 @@ class Handler:
     @staticmethod
     def _session_handler(message):
         message_text = message["text"]
-
         chat_id = message["chat"]["id"]
-        user_interaction = UserInteraction(chat_id)
 
         with Select("bot_users") as select_session:
             session = select_session.user_attribute(chat_id, "session")
 
+        user_interaction = UserInteraction(chat_id)
         if session[-2:] == "CL":
             user_interaction.new_collection(message_text)
 
@@ -87,32 +83,29 @@ class SendMenu:
     def __init__(self, chat_id):
         self._chat_id = chat_id
 
-        with Select("bot_users") as select:
-            self._user_locale = select.user_attribute(chat_id, "locale")
-
     def private_office(self):
-        locale = self._user_locale
-
-        with Select("bot_messages") as select_message:
-            title = select_message.bot_message("private_office", locale)
-
-        buttons = [
+        user_id = self._chat_id
+        template = [
             [
                 ["collections", "collections"],
                 ["settings", "settings"]
             ]
         ]
 
-        buttons = Tools.button_identifier(locale, buttons)
+        with Select("bot_users") as select_user_locale:
+            locale = select_user_locale.user_attribute(user_id, "locale")
 
-        url, structure = self._wrapper(title, buttons)
-        requests.post(url, json=structure)
+        with Select("bot_messages") as select_menu_title:
+            title = select_menu_title.bot_message("private_office", locale)
+
+        buttons = Tools.button_identifier(template, locale)
+        request = self._wrapper(title, buttons)
+
+        requests.post(request["url"], json=request["body"])
 
     def settings(self):
-        with Select("bot_messages") as select_message:
-            title = select_message.bot_message("settings", self._user_locale)
-
-        buttons = [
+        user_id = self._chat_id
+        template = [
             [
                 ["locale_settings", "locale_settings"]
             ],
@@ -121,17 +114,24 @@ class SendMenu:
             ]
         ]
 
-        buttons = Tools.button_identifier(self._user_locale, buttons)
+        with Select("bot_users") as select_user_locale:
+            locale = select_user_locale.user_attribute(user_id, "locale")
 
-        url, structure = self._wrapper(title, buttons)
-        requests.post(url, json=structure)
+        with Select("bot_messages") as select_menu_title:
+            title = select_menu_title.bot_message("settings", locale)
+
+        buttons = Tools.button_identifier(template, locale)
+        request = self._wrapper(title, buttons)
+
+        requests.post(request["url"], json=request["body"])
 
     def _wrapper(self, title, buttons):
-        url, head = API.send_message(self._chat_id, title)
+        api = API()
+        request = api.send_message(self._chat_id, title)
         keyboard = API.inline_keyboard(*buttons)
-        structure = {**head, **keyboard}
+        request["body"] = {**request["body"], **keyboard}
 
-        return url, structure
+        return request
 
 
 class SwitchMenu:
@@ -140,36 +140,30 @@ class SwitchMenu:
         self._message_id = message_id
         self._callback_id = callback_id
 
-        with Select("bot_users") as select:
-            self._user_locale = select.user_attribute(chat_id, "locale")
-
     def private_office(self):
-        locale = self._user_locale
-
-        with Select("bot_messages") as select_message:
-            title = select_message.bot_message("private_office", locale)
-
-        buttons = [
+        user_id = self._chat_id
+        template = [
             [
                 ["collections", "collections"],
                 ["settings", "settings"]
             ]
         ]
 
-        buttons = Tools.button_identifier(locale, buttons)
+        with Select("bot_users") as select_user_locale:
+            locale = select_user_locale.user_attribute(user_id, "locale")
 
-        request, callback_request = self._wrapper(title, buttons)
-        url, structure = request
-        callback_url, callback_answer = callback_request
+        with Select("bot_messages") as select_menu_title:
+            title = select_menu_title.bot_message("private_office", locale)
 
-        requests.post(url, json=structure)
-        requests.post(callback_url, json=callback_answer)
+        buttons = Tools.button_identifier(template, locale)
+        request, callback = self._wrapper(title, buttons)
+
+        requests.post(request["url"], json=request["body"])
+        requests.post(callback["url"], json=callback["body"])
 
     def settings(self):
-        with Select("bot_messages") as select_message:
-            title = select_message.bot_message("settings", self._user_locale)
-
-        buttons = [
+        user_id = self._chat_id
+        template = [
             [
                 ["locale_settings", "locale_settings"]
             ],
@@ -178,22 +172,21 @@ class SwitchMenu:
             ]
         ]
 
-        buttons = Tools.button_identifier(self._user_locale, buttons)
+        with Select("bot_users") as select_user_locale:
+            locale = select_user_locale.user_attribute(user_id, "locale")
 
-        request, callback_request = self._wrapper(title, buttons)
-        url, structure = request
-        callback_url, callback_answer = callback_request
+        with Select("bot_messages") as select_menu_title:
+            title = select_menu_title.bot_message("settings", locale)
 
-        requests.post(url, json=structure)
-        requests.post(callback_url, json=callback_answer)
+        buttons = Tools.button_identifier(template, locale)
+        request, callback = self._wrapper(title, buttons)
+
+        requests.post(request["url"], json=request["body"])
+        requests.post(callback["url"], json=callback["body"])
 
     def locale_settings(self):
-        locale = self._user_locale
-
-        with Select("bot_messages") as select_message:
-            title = select_message.bot_message("current_language", locale)
-
-        buttons = [
+        user_id = self._chat_id
+        template = [
             [
                 ["change_language_to_en", "en_locale"],
                 ["change_language_to_ru", "ru_locale"]
@@ -204,55 +197,59 @@ class SwitchMenu:
             ]
         ]
 
-        buttons = Tools.button_identifier(locale, buttons)
+        with Select("bot_users") as select_user_locale:
+            locale = select_user_locale.user_attribute(user_id, "locale")
 
-        request, callback_request = self._wrapper(title, buttons)
-        url, structure = request
-        callback_url, callback_answer = callback_request
+        with Select("bot_messages") as select_menu_title:
+            title = select_menu_title.bot_message("current_language", locale)
+
+        buttons = Tools.button_identifier(template, locale)
+        request, callback = self._wrapper(title, buttons)
 
         locales = {"en": "English", "ru": "Русский"}[locale]
-        structure["text"] = structure["text"].format(locales)
+        request["body"]["text"] = request["body"]["text"].format(locales)
 
-        requests.post(url, json=structure)
-        requests.post(callback_url, json=callback_answer)
+        requests.post(request["url"], json=request["body"])
+        requests.post(callback["url"], json=callback["body"])
 
     def collections(self):
-        locale = self._user_locale
-
-        with Select("bot_collections") as select:
-            collections_list = select.user_collections(self._chat_id)
-
-        with Select("bot_messages") as select_message:
-            title = select_message.bot_message("collections", locale)
-
-        buttons = [
+        user_id = self._chat_id
+        template = [
             [
                 ["add_collection", "add_collection"],
                 ["back", "private_office"]
             ]
         ]
 
+        with Select("bot_users") as select_user_locale:
+            locale = select_user_locale.user_attribute(user_id, "locale")
+
+        with Select("bot_messages") as select_menu_title:
+            title = select_menu_title.bot_message("collections", locale)
+
+        with Select("bot_collections") as select:
+            collections_list = select.user_collections(user_id)
+
         collections = Tools.keyboard_creator(collections_list)
-        buttons = Tools.button_identifier(locale, buttons)
-        keyboard = collections + buttons
+        buttons = Tools.button_identifier(template, locale)
+        request, callback = self._wrapper(title, collections + buttons)
 
-        request, callback_request = self._wrapper(title, keyboard)
-        url, structure = request
-        callback_url, callback_answer = callback_request
+        requests.post(request["url"], json=request["body"])
+        requests.post(callback["url"], json=callback["body"])
 
-        requests.post(url, json=structure)
-        requests.post(callback_url, json=callback_answer)
+    def _wrapper(self, title, buttons):
+        user_id = self._chat_id
+        message_id = self._message_id
+        callback_id = self._callback_id
 
-    def _wrapper(self, title, keyboard):
-        callback = self._callback_id
+        api = API()
+        request = api.edit_message(user_id, message_id, title)
+        callback = api.answer_callback_query(callback_id)
 
-        url, head = API.edit_message(self._chat_id, self._message_id, title)
-        callback_url, callback_answer = API.answer_callback_query(callback)
+        keyboard = API.inline_keyboard(*buttons)
+        request["body"] = {**request["body"], **keyboard}
 
-        inline_keyboard = API.inline_keyboard(*keyboard)
-        structure = {**head, **inline_keyboard}
-
-        return (url, structure), (callback_url, callback_answer)
+        return request, callback
 
 
 class UserInteraction:
@@ -260,36 +257,37 @@ class UserInteraction:
         self._chat_id = chat_id
         self._callback_id = callback_id
 
-        with Select("bot_users") as select:
-            self._user_locale = select.user_attribute(chat_id, "locale")
-
     def change_locale(self, data):
         with Update("bot_users") as update_locale:
             update_locale.user_attribute(self._chat_id, "locale", data[:2])
 
     def add_collection(self):
-        locale = self._user_locale
-        callback = self._callback_id
+        user_id = self._chat_id
+        callback_id = self._callback_id
         key = Tools.new_collection_key()
 
+        with Select("bot_users") as select_user_locale:
+            locale = select_user_locale.user_attribute(user_id, "locale")
+
         with Update("bot_users") as update_session:
-            update_session.user_attribute(self._chat_id, "session", key)
+            update_session.user_attribute(user_id, "session", key)
 
         with Select("bot_messages") as select_message:
             text = select_message.bot_message("create_collection", locale)
 
-        url, structure = API.send_message(self._chat_id, text)
-        callback_url, callback_answer = API.answer_callback_query(callback)
+        api = API()
+        request = api.send_message(user_id, text)
+        callback = API.answer_callback_query(callback_id)
 
-        requests.post(url, json=structure)
-        requests.post(callback_url, json=callback_answer)
+        requests.post(request["url"], json=request["body"])
+        requests.post(callback["url"], json=callback["body"])
 
     def new_collection(self, collection_name):
         user_id = self._chat_id
-        locale = self._user_locale
 
         with Select("bot_users") as select:
             key = select.user_attribute(user_id, "session")
+            locale = select.user_attribute(user_id, "locale")
             collections = select.user_attribute(user_id, "collections")
 
         with Insert("bot_collections") as insert_collection:
@@ -302,5 +300,7 @@ class UserInteraction:
         with Select("bot_messages") as select_message:
             text = select_message.bot_message("new_collection", locale)
 
-        url, structure = API.send_message(user_id, text)
-        requests.post(url, json=structure)
+        api = API()
+        request = api.send_message(user_id, text)
+
+        requests.post(request["url"], json=request["body"])
