@@ -19,7 +19,7 @@ class API:
             self._url = config["telegram"]["url"]
 
     def send_message(self, chat_id, text, parse_mode=None):
-        request = {"url": '', "body": {}}
+        request = {"url": "", "body": {}}
         command = "sendMessage"
         request["url"] = self._url.format(token=self._token, command=command)
 
@@ -30,7 +30,7 @@ class API:
         return request
 
     def edit_message(self, chat_id, message_id, text, parse_mode=None):
-        request = {"url": '', "body": {}}
+        request = {"url": "", "body": {}}
         command = "editMessageText"
         request["url"] = self._url.format(token=self._token, command=command)
 
@@ -44,9 +44,10 @@ class API:
 
         return request
 
-    def answer_callback_query(self, callback_query_id, 
-                              text=None, show_alert=False):
-        request = {"url": '', "body": {}}
+    def answer_callback_query(
+            self, callback_query_id,
+            text=None, show_alert=False):
+        request = {"url": "", "body": {}}
         command = "answerCallbackQuery"
         request["url"] = self._url.format(token=self._token, command=command)
 
@@ -131,10 +132,59 @@ class Tools:
         return buttons
 
     @staticmethod
-    def button_identifier(buttons, locale='en'):
+    def button_identifier(buttons, locale="en"):
         with Select("bot_messages") as select_button_title:
             for button in buttons:
                 for data in button:
                     data[0] = select_button_title.bot_message(data[0], locale)
+
+        return buttons
+
+    @staticmethod
+    def navigation_creator(
+            number_of_items, level=0,
+            items_in_page=8, number_of_navigation_buttons=5):
+        pages = number_of_items//items_in_page + bool(number_of_items%items_in_page)
+
+        buttons = [[]]
+        if number_of_items < number_of_navigation_buttons*items_in_page + 1:
+            for button in range(pages):
+                page_state = ["• {} •", "{}"][button != level]
+
+                button_name = page_state.format(button + 1)
+                button_data = f"level_{'0'*(1 - button//10)}{button}"
+                buttons[0].append([button_name, button_data])
+
+        else:
+            for button in range(number_of_navigation_buttons):
+                if level in (0, 1):
+                    navigation = ["{}", "{}", "{}", "{} ›", "{} »"]
+                    navigation[level] = "• {} •"
+
+                    data = pages if button == 4 else button + 1
+
+                elif level in (pages - 1, pages - 2):
+                    navigation = ["« {}", "‹ {}", "{}", "{}", "{}"]
+                    navigation[level - pages + 5] = "• {} •"
+
+                    if button:
+                        data = pages + button - 4
+                    else:
+                        data = button + 1
+
+                else:
+                    navigation = ["« {}", "‹ {}", "• {} •", "{} ›", "{} »"]
+
+                    if button:
+                        if button == 4:
+                            data = pages
+                        else:
+                            data = button + level - 1
+                    else:
+                        data = 1
+
+                button_name = navigation[button].format(data)
+                button_data = f"level_{'0'*(1 - data//10)}{data - 1}"
+                buttons[0].append([button_name, button_data])
 
         return buttons
