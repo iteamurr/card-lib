@@ -62,6 +62,7 @@ class CreateTable:
                collections integer,
                cards integer,
                menu_id integer,
+               page_level integer,
                session text
             );
             """
@@ -131,9 +132,10 @@ class Insert:
                collections,
                cards,
                menu_id,
+               page_level,
                session
-            ) VALUES (%s, %s, %s, %s, %s, %s, %s);
-            """, (user_id, username, locale, 0, 0, menu_id, None)
+            ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s);
+            """, (user_id, username, locale, 0, 0, menu_id, 0, None)
         )
 
     def new_collection(self, user_id, key, name):
@@ -191,8 +193,10 @@ class Select:
             """, (locale, data)
         )
 
-        message = self._cursor.fetchone()[0]
-        return message
+        message = self._cursor.fetchone()
+        if message:
+            return message[0]
+        return None
 
     def user_attribute(self, user_id, attribute):
         self._cursor.execute(
@@ -201,8 +205,10 @@ class Select:
             ).format(sql.Identifier(attribute)), (user_id,)
         )
 
-        attribute_value = self._cursor.fetchone()[0]
-        return attribute_value
+        attribute_value = self._cursor.fetchone()
+        if attribute_value:
+            return attribute_value[0]
+        return None
 
     def user_collections(self, user_id):
         self._cursor.execute(
@@ -220,8 +226,10 @@ class Select:
             ).format(sql.Identifier(attribute)), (user_id, key)
         )
 
-        attribute_value = self._cursor.fetchone()[0]
-        return attribute_value
+        attribute_value = self._cursor.fetchone()
+        if attribute_value:
+            return attribute_value[0]
+        return None
 
 
 class Update:
