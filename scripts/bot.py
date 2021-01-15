@@ -66,6 +66,10 @@ class Handler:
                 user_interaction.change_locale(data)
                 switch_menu.locale_settings()
 
+        elif "level" in data:
+            user_interaction.change_level(data)
+            switch_menu.collections()
+
     @staticmethod
     def _session_handler(message):
         message_text = message["text"]
@@ -75,7 +79,7 @@ class Handler:
             session = select_session.user_attribute(chat_id, "session")
 
         user_interaction = UserInteraction(chat_id)
-        if session[-2:] == "CL":
+        if session and session[-2:] == "CL":
             user_interaction.new_collection(message_text)
 
 
@@ -214,6 +218,7 @@ class SwitchMenu:
 
     def collections(self):
         user_id = self._chat_id
+        collections_in_page = 8
         template = [
             [
                 ["add_collection", "add_collection"],
@@ -221,8 +226,9 @@ class SwitchMenu:
             ]
         ]
 
-        with Select("bot_users") as select_user_locale:
-            locale = select_user_locale.user_attribute(user_id, "locale")
+        with Select("bot_users") as select:
+            locale = select.user_attribute(user_id, "locale")
+            level = select.user_attribute(user_id, "page_level")
 
         with Select("bot_messages") as select_menu_title:
             title = select_menu_title.bot_message("collections", locale)
@@ -230,9 +236,16 @@ class SwitchMenu:
         with Select("bot_collections") as select:
             collections_list = select.user_collections(user_id)
 
-        collections = Tools.keyboard_creator(collections_list)
+        navigation = Tools.navigation_creator(len(collections_list), level)
+
+        left_border = collections_in_page*level
+        right_border = collections_in_page*(level+1)
+        collections_of_current_page = collections_list[left_border:right_border]
+        collections = Tools.keyboard_creator(collections_of_current_page)
+
         buttons = Tools.button_identifier(template, locale)
-        request, callback = self._wrapper(title, collections + buttons)
+        menu_buttons = navigation + collections + buttons
+        request, callback = self._wrapper(title, menu_buttons)
 
         requests.post(request["url"], json=request["body"])
         requests.post(callback["url"], json=callback["body"])
@@ -261,6 +274,11 @@ class UserInteraction:
         with Update("bot_users") as update_locale:
             update_locale.user_attribute(self._chat_id, "locale", data[:2])
 
+    def change_level(self, level):
+        with Update("bot_users") as update_level:
+            level = int(level[-2:])
+            update_level.user_attribute(self._chat_id, "page_level", level)
+
     def add_collection(self):
         user_id = self._chat_id
         callback_id = self._callback_id
@@ -277,7 +295,7 @@ class UserInteraction:
 
         api = API()
         request = api.send_message(user_id, text)
-        callback = API.answer_callback_query(callback_id)
+        callback = api.answer_callback_query(callback_id)
 
         requests.post(request["url"], json=request["body"])
         requests.post(callback["url"], json=callback["body"])
