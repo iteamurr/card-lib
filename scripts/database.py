@@ -1,283 +1,274 @@
-# -*- coding: utf-8 -*-
-'''Module responsible for working with the database.
-'''
+# pylint: disable=missing-module-docstring
+# pylint: disable=missing-class-docstring
+# pylint: disable=missing-function-docstring
 
-# PostgreSQL
+import json
 import psycopg2
+from psycopg2 import sql
 
 
-class Create:
-    '''Database creation.
-    '''
+class CreateTable:
+    def __init__(self, db_name):
+        self.db_name = db_name
+        self._connection = None
+        self._cursor = None
 
-    def __init__(self, user, password,
-                 host='localhost', port=5432):
-        '''Data required to initialize the database.
+        with open("config.json") as config_json:
+            config = json.load(config_json)
 
-        Parameters
-        ----------
-        user : str
-            Database user.
-        password : str
-            Database user password.
-        host : str
-            Host on which the database is hosted (default is 'localhost').
-        port : int
-            Database port (default is 5432).
-        '''
+            self._user = config["database"]["user"]
+            self._passwd = config["database"]["passwd"]
 
-        self.user = user
-        self.password = password
+            self._host = config["database"]["host"]
+            self._port = config["database"]["port"]
 
-        self.host = host
-        self.port = port
+    def __enter__(self):
+        self._connection = psycopg2.connect(
+            dbname=self.db_name,
+            user=self._user, password=self._passwd,
+            host=self._host, port=self._port
+        )
+        self._cursor = self._connection.cursor()
 
-    def bot_messages_db(self, name='bot_messages'):
-        '''Creating a database with messages that the bot sends to users.
+        return self
 
-        Parameters
-        ----------
-        name : str
-            Database name (default is 'bot_messages').
-        '''
+    def __exit__(self, exc_type, exc_value, traceback):
+        if traceback is None:
+            self._connection.commit()
+        else:
+            self._connection.rollback()
 
-        connection = psycopg2.connect(
-            dbname=name,
-            user=self.user, password=self.password,
-            host=self.host, port=self.port
+        self._cursor.close()
+        self._connection.close()
+
+    def bot_messages(self):
+        self._cursor.execute(
+            """CREATE TABLE messages (
+               id serial PRIMARY KEY,
+               locale text,
+               data text,
+               message text
+            );
+            """
         )
 
-        cursor = connection.cursor()
-        cursor.execute('''CREATE TABLE messages
-            (id serial PRIMARY KEY, locale text,
-            data text, message text);''')
-
-        connection.commit()
-        cursor.close()
-        connection.close()
-
-    def users_db(self, name='bot_users'):
-        '''Creating a database of bot users.
-
-        Parameters
-        ----------
-        name : str
-            Database name (default is 'bot_users').
-        '''
-
-        connection = psycopg2.connect(
-            dbname=name,
-            user=self.user, password=self.password,
-            host=self.host, port=self.port
+    def bot_users(self):
+        self._cursor.execute(
+            """CREATE TABLE users (
+               id serial PRIMARY KEY,
+               user_id integer,
+               username text,
+               locale text,
+               collections integer,
+               cards integer,
+               menu_id integer,
+               page_level integer,
+               session text
+            );
+            """
         )
 
-        cursor = connection.cursor()
-        cursor.execute('''CREATE TABLE users
-            (id serial PRIMARY KEY, user_id integer,
-            username text, locale text,
-            collections integer, cards integer,
-            menu_id integer, session text);''')
-
-        connection.commit()
-        cursor.close()
-        connection.close()
+    def bot_collections(self):
+        self._cursor.execute(
+            """CREATE TABLE collections (
+               id serial PRIMARY KEY,
+               user_id integer,
+               key text,
+               name text,
+               description text,
+               cards integer
+            );
+            """
+        )
 
 
 class Insert:
-    '''Inserting to the database.
-    '''
+    def __init__(self, db_name):
+        self._db_name = db_name
+        self._connection = None
+        self._cursor = None
 
-    # pylint: disable=too-many-arguments
-    # All arguments are required
-    # for the database to work correctly.
-    def __init__(self, name, user, password,
-                 host='localhost', port=5432):
-        '''Data required to initialize the database.
+        with open("config.json") as config_json:
+            config = json.load(config_json)
 
-        Parameters
-        ----------
-        name : str
-            Database name.
-        user : str
-            Database user.
-        password : str
-            Database user password.
-        host : str
-            Host on which the database is hosted (default is 'localhost').
-        port : int
-            Database port (default is 5432).
-        '''
+            self._user = config["database"]["user"]
+            self._passwd = config["database"]["passwd"]
 
-        self.db_name = name
+            self._host = config["database"]["host"]
+            self._port = config["database"]["port"]
 
-        self.db_user = user
-        self.db_password = password
-
-        self.db_host = host
-        self.db_port = port
-
-    def new_bot_message(self, data, message, locale='ru'):
-        '''Inserting a new bot message to the database.
-
-        Parameters
-        ----------
-        data : str
-            A key unique to each message.
-        message : str
-            The message that the bot will send
-            in response to the user.
-        locale : str
-            Language of the message (default is 'ru').
-        '''
-
-        connection = psycopg2.connect(
-            dbname=self.db_name,
-            user=self.db_user, password=self.db_password,
-            host=self.db_host, port=self.db_port
+    def __enter__(self):
+        self._connection = psycopg2.connect(
+            dbname=self._db_name,
+            user=self._user, password=self._passwd,
+            host=self._host, port=self._port
         )
+        self._cursor = self._connection.cursor()
 
-        cursor = connection.cursor()
-        cursor.execute('''
-            INSERT INTO messages (locale, data, message)
-            VALUES (%s, %s, %s);''', (locale, data, message))
+        return self
 
-        connection.commit()
-        cursor.close()
-        connection.close()
+    def __exit__(self, exc_type, exc_value, traceback):
+        if traceback is None:
+            self._connection.commit()
+        else:
+            self._connection.rollback()
+
+        self._cursor.close()
+        self._connection.close()
+
+    def new_bot_message(self, data, message, locale="en"):
+        self._cursor.execute(
+            """INSERT INTO messages (locale, data, message)
+               VALUES (%s, %s, %s);
+            """, (locale, data, message)
+        )
 
     def new_user(self, user_id, username, locale, menu_id):
-        '''Inserting a new user to the database.
-
-        Parameters
-        ----------
-        user_id : int
-            A unique ID for each user.
-        username : str
-            Short username in Telegram.
-        locale : str
-            Language of the message.
-        menu_id : int
-            Unique message ID of the user's
-            private office menu.
-        '''
-
-        connection = psycopg2.connect(
-            dbname=self.db_name,
-            user=self.db_user, password=self.db_password,
-            host=self.db_host, port=self.db_port
+        self._cursor.execute(
+            """INSERT INTO users (
+               user_id,
+               username,
+               locale,
+               collections,
+               cards,
+               menu_id,
+               page_level,
+               session
+            ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s);
+            """, (user_id, username, locale, 0, 0, menu_id, 0, None)
         )
 
-        cursor = connection.cursor()
-        cursor.execute('''
-            INSERT INTO users (user_id, username, locale,
-                               collections, cards,
-                               menu_id, session)
-            VALUES (%s, %s, %s,
-                    %s, %s,
-                    %s, %s);''',
-            (user_id, username, locale,
-            0, 0,
-            menu_id, None))
-
-        connection.commit()
-        cursor.close()
-        connection.close()
+    def new_collection(self, user_id, key, name):
+        self._cursor.execute(
+            """INSERT INTO collections (
+               user_id,
+               key,
+               name,
+               description,
+               cards
+            ) VALUES (%s, %s, %s, %s, %s);
+            """, (user_id, key, name, None, 0)
+        )
 
 
 class Select:
-    '''Selecting data from the database.
-    '''
+    def __init__(self, db_name):
+        self._db_name = db_name
+        self._connection = None
+        self._cursor = None
 
-    # pylint: disable=too-many-arguments
-    # All arguments are required
-    # for the database to work correctly.
-    def __init__(self, name, user, password,
-                 host='localhost', port=5432):
-        '''Data required to initialize the database.
+        with open("config.json") as config_json:
+            config = json.load(config_json)
 
-        Parameters
-        ----------
-        name : str
-            Database name.
-        user : str
-            Database user.
-        password : str
-            Database user password.
-        host : str
-            Host on which the database is hosted (default is 'localhost').
-        port : int
-            Database port (default is 5432).
-        '''
+            self._user = config["database"]["user"]
+            self._passwd = config["database"]["passwd"]
 
-        self.db_name = name
+            self._host = config["database"]["host"]
+            self._port = config["database"]["port"]
 
-        self.db_user = user
-        self.db_password = password
+    def __enter__(self):
+        self._connection = psycopg2.connect(
+            dbname=self._db_name,
+            user=self._user, password=self._passwd,
+            host=self._host, port=self._port
+        )
+        self._cursor = self._connection.cursor()
 
-        self.db_host = host
-        self.db_port = port
+        return self
 
-    def bot_message(self, data, locale='ru'):
-        '''Getting a bot message from the database.
+    def __exit__(self, exc_type, exc_value, traceback):
+        if traceback is None:
+            self._connection.commit()
+        else:
+            self._connection.rollback()
 
-        Parameters
-        ----------
-        data : str
-            A key unique to each message.
-        locale : str
-            Language of the message (default is 'ru').
+        self._cursor.close()
+        self._connection.close()
 
-        Returns
-        -------
-        message : str
-            The message that the bot will send
-            in response to the user.
-        '''
-
-        connection = psycopg2.connect(
-            dbname=self.db_name,
-            user=self.db_user, password=self.db_password,
-            host=self.db_host, port=self.db_port
+    def bot_message(self, data, locale="en"):
+        self._cursor.execute(
+            """SELECT message FROM messages
+               WHERE locale=%s AND
+                     data=%s;
+            """, (locale, data)
         )
 
-        cursor = connection.cursor()
-        cursor.execute('''
-            SELECT message FROM messages
-            WHERE locale=%s AND data=%s;''', (locale, data))
-        message = cursor.fetchone()[0]
+        message = self._cursor.fetchone()
+        if message:
+            return message[0]
+        return None
 
-        cursor.close()
-        connection.close()
-
-        return message
-
-    def user_attributes(self, user_id):
-        '''Getting all user attributes.
-
-        Parameters
-        ----------
-        user_id : int
-            A unique ID for each user.
-
-        Returns
-        -------
-        attributes : tuple
-            All user attributes.
-        '''
-
-        connection = psycopg2.connect(
-            dbname=self.db_name,
-            user=self.db_user, password=self.db_password,
-            host=self.db_host, port=self.db_port
+    def user_attribute(self, user_id, attribute):
+        self._cursor.execute(
+            sql.SQL(
+                "SELECT {} FROM users WHERE user_id=%s;"
+            ).format(sql.Identifier(attribute)), (user_id,)
         )
 
-        cursor = connection.cursor()
-        cursor.execute('''
-            SELECT * FROM users
-            WHERE user_id=%s;''', (user_id, ))
-        attributes = cursor.fetchone()
+        attribute_value = self._cursor.fetchone()
+        if attribute_value:
+            return attribute_value[0]
+        return None
 
-        cursor.close()
-        connection.close()
+    def user_collections(self, user_id):
+        self._cursor.execute(
+            """SELECT * FROM collections WHERE user_id=%s;
+            """, (user_id,)
+        )
 
-        return attributes
+        collections = self._cursor.fetchall()
+        return collections
+
+    def collection_attribute(self, user_id, key, attribute):
+        self._cursor.execute(
+            sql.SQL(
+                "SELECT {} FROM collections WHERE user_id=%s AND key=%s;"
+            ).format(sql.Identifier(attribute)), (user_id, key)
+        )
+
+        attribute_value = self._cursor.fetchone()
+        if attribute_value:
+            return attribute_value[0]
+        return None
+
+
+class Update:
+    def __init__(self, db_name):
+        self._db_name = db_name
+        self._connection = None
+        self._cursor = None
+
+        with open("config.json") as config_json:
+            config = json.load(config_json)
+
+            self._user = config["database"]["user"]
+            self._passwd = config["database"]["passwd"]
+
+            self._host = config["database"]["host"]
+            self._port = config["database"]["port"]
+
+    def __enter__(self):
+        self._connection = psycopg2.connect(
+            dbname=self._db_name,
+            user=self._user, password=self._passwd,
+            host=self._host, port=self._port
+        )
+        self._cursor = self._connection.cursor()
+
+        return self
+
+    def __exit__(self, exc_type, exc_value, traceback):
+        if traceback is None:
+            self._connection.commit()
+        else:
+            self._connection.rollback()
+
+        self._cursor.close()
+        self._connection.close()
+
+    def user_attribute(self, user_id, attribute, value):
+        self._cursor.execute(
+            sql.SQL(
+                "UPDATE users SET {}=%s WHERE user_id=%s;"
+            ).format(sql.Identifier(attribute)), (value, user_id)
+        )

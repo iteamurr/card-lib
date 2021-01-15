@@ -1,150 +1,65 @@
-# -*- coding: utf-8 -*-
-'''Module containing tools
-that are used in work of bot.
-'''
-
-# Other imports
-import json
-
-# Project imports
 # pylint: disable=import-error
-import database as db
+# pylint: disable=missing-module-docstring
+# pylint: disable=missing-class-docstring
+# pylint: disable=missing-function-docstring
+
+import json
+import random
+import string
+from math import ceil
+
+from database import Select, Insert
 
 
 class API:
-    '''Working with Telegram API.
-    '''
-
-    @staticmethod
-    def send_message(chat_id, text, parse_mode='MarkdownV2'):
-        '''Creating a link and link content to send message.
-
-        Parameters
-        ----------
-        chat_id : int
-            Unique user id.
-        text : str
-            The text to be wrapped.
-        parse_mode : str, optional
-            Way to format text (default is 'MarkdownV2').
-
-        Returns
-        -------
-        api_url : str
-            Link to send a message.
-        json_response : dict
-            Extending the message.
-        '''
-
-        with open('config.json') as config_json:
+    def __init__(self):
+        with open("config.json") as config_json:
             config = json.load(config_json)
-            token = config['telegram']['token']
-            telegram_url = config['telegram']['url']
+            self._token = config["telegram"]["token"]
+            self._url = config["telegram"]["url"]
 
-        api_url = telegram_url.format(token=token, command='sendMessage')
-        json_response = {
-            'chat_id': chat_id,
-            'text': text,
-            'parse_mode': parse_mode
+    def send_message(self, chat_id, text, parse_mode=None):
+        request = {"url": "", "body": {}}
+        command = "sendMessage"
+        request["url"] = self._url.format(token=self._token, command=command)
+
+        request["body"] = {"chat_id": chat_id, "text": text}
+        if parse_mode:
+            request["body"]["parse_mode"] = parse_mode
+
+        return request
+
+    def edit_message(self, chat_id, message_id, text, parse_mode=None):
+        request = {"url": "", "body": {}}
+        command = "editMessageText"
+        request["url"] = self._url.format(token=self._token, command=command)
+
+        request["body"] = {
+            "chat_id": chat_id,
+            "message_id": message_id,
+            "text": text
         }
+        if parse_mode:
+            request["body"]["parse_mode"] = parse_mode
 
-        return api_url, json_response
+        return request
 
-    @staticmethod
-    def edit_message(chat_id, message_id, text, parse_mode='MarkdownV2'):
-        '''Create link and link content to edit message.
+    def answer_callback_query(
+            self, callback_query_id,
+            text=None, show_alert=False):
+        request = {"url": "", "body": {}}
+        command = "answerCallbackQuery"
+        request["url"] = self._url.format(token=self._token, command=command)
 
-        Parameters
-        ----------
-        chat_id : int
-            Unique user id.
-        message_id : int
-            Unique message id.
-        text : str
-            The text to be wrapped.
-        parse_mode : str, optional
-            Way to format text (default is 'MarkdownV2').
+        request["body"] = {"callback_query_id": callback_query_id}
+        if text:
+            request["body"]["text"] = text
+            request["body"]["show_alert"] = show_alert
 
-        Returns
-        -------
-        api_url : str
-            Link to send a message.
-        json_response : dict
-            Extending the message.
-        '''
-
-        with open('config.json') as config_json:
-            config = json.load(config_json)
-            token = config['telegram']['token']
-            telegram_url = config['telegram']['url']
-
-        api_url = telegram_url.format(token=token, command='editMessageText')
-        json_response = {
-            'chat_id': chat_id,
-            'message_id': message_id,
-            'text': text,
-            'parse_mode': parse_mode
-        }
-
-        return api_url, json_response
-
-    @staticmethod
-    def answer_callback_query(callback_query_id, text=None, show_alert=False):
-        '''Response to callback request sent from inline keyboard.
-
-        Parameters
-        ----------
-        callback_query_id : int
-            Unique identifier for the query to be answered.
-        text : str, optional
-            Text of the notification.
-        show_alert : bool, optional
-            Show notification to user (default is False).
-
-        Returns
-        -------
-        api_url : str
-            Link to send a message.
-        json_response : dict
-            Extending the message.
-        '''
-
-        with open('config.json') as config_json:
-            config = json.load(config_json)
-            token = config['telegram']['token']
-            telegram_url = config['telegram']['url']
-
-        api_url = telegram_url.format(
-            token=token, command='answerCallbackQuery')
-
-        if not text:
-            json_response = {
-                'callback_query_id': callback_query_id
-            }
-        else:
-            json_response = {
-                'callback_query_id': callback_query_id,
-                'text': text,
-                'show_alert': show_alert
-            }
-
-        return api_url, json_response
+        return request
 
     @staticmethod
     def inline_keyboard(*button_data_list):
-        '''Inline keyboard creation.
-
-        Parameters
-        ----------
-        *button_data_list
-            List of button data to wrap.
-
-        Returns
-        -------
-        keyboard : JSON
-            Ready wrapped keyboard.
-        '''
-
         keyboard = {
             "reply_markup":{
                 "inline_keyboard":[
@@ -153,12 +68,12 @@ class API:
         }
 
         button_index = 0
-        inline_keyboard = keyboard['reply_markup']['inline_keyboard']
+        inline_keyboard = keyboard["reply_markup"]["inline_keyboard"]
         for button_data in button_data_list:
             inline_keyboard.append([])
 
             for button_text, callback_data in button_data:
-                button = {'text': button_text, 'callback_data': callback_data}
+                button = {"text": button_text, "callback_data": callback_data}
                 inline_keyboard[button_index].append(button)
 
             button_index += 1
@@ -166,113 +81,110 @@ class API:
         return keyboard
 
 
-class BotTools:
-    '''Tools used by bot during message processing.
-    '''
-
-    # pylint: disable=too-many-locals
+class Tools:
     @staticmethod
     def check_new_user(message):
-        '''Checking for the presence of a user in the database.
-        If there is no user, write it to the database.
+        chat_id = message["chat"]["id"]
 
-        Parameters
-        ----------
-        message : JSON
-            Message content.
-        '''
-
-        with open('config.json') as config_json:
-            config = json.load(config_json)
-            db_name = config['database']['db'][1]
-            db_user = config['database']['user']
-            db_password = config['database']['passwd']
-            db_host = config['database']['host']
-            db_port = config['database']['port']
-
-        db_select = db.Select(
-            name=db_name,
-            user=db_user, password=db_password,
-            host=db_host, port=db_port)
-
-        chat_id = message['chat']['id']
-        user_existence = db_select.user_attributes(chat_id)
+        with Select("bot_users") as select_user:
+            user_existence = select_user.user_attribute(chat_id, "locale")
 
         if not user_existence:
-            user_menu_id = message['message_id']
-            username = message['from']['username']
-            locale = message['from']['language_code']
-            user_locale = locale if locale in ['en', 'ru'] else 'en'
+            menu_id = message["message_id"]
+            username = message["from"]["username"]
+            locale = message["from"]["language_code"]
+            user_locale = locale if locale in ["en", "ru"] else "en"
 
-            db_insert = db.Insert(
-                name=db_name,
-                user=db_user, password=db_password,
-                host=db_host, port=db_port)
-
-            db_insert.new_user(
-                user_id=chat_id, username=username,
-                locale=user_locale, menu_id=user_menu_id)
+            with Insert("bot_users") as db_insert:
+                db_insert.new_user(
+                    user_id=chat_id, username=username,
+                    locale=user_locale, menu_id=menu_id
+                )
 
     @staticmethod
-    def get_user_locale(chat_id):
-        '''Getting user language settings.
+    def new_collection_key():
+        first_part = random.randrange(100000000, 1000000000)
+        second_part = random.randrange(1000000000, 10000000000)
+        third_part = random.choice(string.ascii_letters)
 
-        Returns
-        -------
-        chat_id : int
-            Unique user id.
-        '''
+        key = f"K-{first_part}-{second_part}-{third_part}-00000-CL"
 
-        with open('config.json') as config_json:
-            config = json.load(config_json)
-            db_name = config['database']['db'][1]
-            db_user = config['database']['user']
-            db_password = config['database']['passwd']
-            db_host = config['database']['host']
-            db_port = config['database']['port']
-
-        db_select_user_locale = db.Select(
-            name=db_name,
-            user=db_user, password=db_password,
-            host=db_host, port=db_port)
-
-        locale = db_select_user_locale.user_attributes(chat_id)[3]
-
-        return locale
+        return key
 
     @staticmethod
-    def get_menu_name(locale, *menu_list):
-        '''Retrieving menu names from the database.
+    def keyboard_creator(collections, buttons_in_layer=2):
+        buttons = []
+        collection_length = len(collections)
+        layers = ceil(collection_length/buttons_in_layer)
 
-        Parameters
-        ----------
-        locale : str
-            A key unique to each message.
-        *menu_list
-            List of menus to get names.
+        for layer in range(layers):
+            buttons.append([])
+            left_border = buttons_in_layer*layer
+            right_border = buttons_in_layer*(layer+1)
 
-        Returns
-        -------
-        menu_names : list
-            List of menu names.
-        '''
+            for collection in collections[left_border:right_border]:
+                collection_data = collection[2]
+                collection_name = collection[3]
+                button_data = [collection_name, collection_data]
 
-        with open('config.json') as config_json:
-            config = json.load(config_json)
-            db_name = config['database']['db'][0]
-            db_user = config['database']['user']
-            db_password = config['database']['passwd']
-            db_host = config['database']['host']
-            db_port = config['database']['port']
+                buttons[layer].append(button_data)
 
-        db_select_message = db.Select(
-            name=db_name,
-            user=db_user, password=db_password,
-            host=db_host, port=db_port)
+        return buttons
 
-        menu_names = []
-        for data in menu_list:
-            menu_name = db_select_message.bot_message(data, locale)
-            menu_names.append(menu_name)
+    @staticmethod
+    def button_identifier(buttons, locale="en"):
+        with Select("bot_messages") as select_button_title:
+            for button in buttons:
+                for data in button:
+                    data[0] = select_button_title.bot_message(data[0], locale)
 
-        return menu_names
+        return buttons
+
+    @staticmethod
+    def navigation_creator(
+            number_of_items, level=0,
+            items_in_page=8, number_of_navigation_buttons=5):
+        pages = number_of_items//items_in_page + bool(number_of_items%items_in_page)
+
+        buttons = [[]]
+        if number_of_items < number_of_navigation_buttons*items_in_page + 1:
+            for button in range(pages):
+                page_state = ["• {} •", "{}"][button != level]
+
+                button_name = page_state.format(button + 1)
+                button_data = f"level_{'0'*(1 - button//10)}{button}"
+                buttons[0].append([button_name, button_data])
+
+        else:
+            for button in range(number_of_navigation_buttons):
+                if level in (0, 1):
+                    navigation = ["{}", "{}", "{}", "{} ›", "{} »"]
+                    navigation[level] = "• {} •"
+
+                    data = pages if button == 4 else button + 1
+
+                elif level in (pages - 1, pages - 2):
+                    navigation = ["« {}", "‹ {}", "{}", "{}", "{}"]
+                    navigation[level - pages + 5] = "• {} •"
+
+                    if button:
+                        data = pages + button - 4
+                    else:
+                        data = button + 1
+
+                else:
+                    navigation = ["« {}", "‹ {}", "• {} •", "{} ›", "{} »"]
+
+                    if button:
+                        if button == 4:
+                            data = pages
+                        else:
+                            data = button + level - 1
+                    else:
+                        data = 1
+
+                button_name = navigation[button].format(data)
+                button_data = f"level_{'0'*(1 - data//10)}{data - 1}"
+                buttons[0].append([button_name, button_data])
+
+        return buttons
