@@ -46,7 +46,7 @@ class Handler:
         message_id = callback_query["message"]["message_id"]
 
         user_interaction = UserInteraction(chat_id, callback_id)
-        switch_menu = SwitchMenu(chat_id, message_id, callback_id)
+        switch_menu = SwitchMenu(chat_id, message_id, callback_id, data)
         if data == "private_office":
             switch_menu.private_office()
 
@@ -55,6 +55,9 @@ class Handler:
                 switch_menu.collections()
             elif data == "add_collection":
                 user_interaction.add_collection()
+
+        elif "CL" in data:
+            switch_menu.collection_info()
 
         elif data == "settings":
             switch_menu.settings()
@@ -139,10 +142,11 @@ class SendMenu:
 
 
 class SwitchMenu:
-    def __init__(self, chat_id, message_id, callback_id):
+    def __init__(self, chat_id, message_id, callback_id, data):
         self._chat_id = chat_id
         self._message_id = message_id
         self._callback_id = callback_id
+        self._data = data
 
     def private_office(self):
         user_id = self._chat_id
@@ -207,11 +211,9 @@ class SwitchMenu:
         with Select("bot_messages") as select_menu_title:
             title = select_menu_title.bot_message("current_language", locale)
 
+        title = title.format({"en": "English", "ru": "Русский"}[locale])
         buttons = Tools.button_identifier(template, locale)
         request, callback = self._wrapper(title, buttons)
-
-        locales = {"en": "English", "ru": "Русский"}[locale]
-        request["body"]["text"] = request["body"]["text"].format(locales)
 
         requests.post(request["url"], json=request["body"])
         requests.post(callback["url"], json=callback["body"])
@@ -250,13 +252,45 @@ class SwitchMenu:
         requests.post(request["url"], json=request["body"])
         requests.post(callback["url"], json=callback["body"])
 
-    def _wrapper(self, title, buttons):
+    def collection_info(self):
+        user_id = self._chat_id
+        key = self._data
+        template = [
+            [
+                ["main", "private_office"],
+                ["back", "collections"]
+            ]
+        ]
+
+        with Select("bot_users") as select:
+            locale = select.user_attribute(user_id, "locale")
+
+        with Select("bot_messages") as select_menu_title:
+            title = select_menu_title.bot_message("collection_info", locale)
+
+        with Select("bot_collections") as select:
+            name = select.collection_attribute(user_id, key, "name")
+            description = select.collection_attribute(user_id, key, "description")
+            description = "🚫" if not description else description
+            cards = select.collection_attribute(user_id, key, "cards")
+
+        page = title.format(name, description, key, cards)
+        buttons = Tools.button_identifier(template, locale)
+        request, callback = self._wrapper(page, buttons, "MarkdownV2")
+
+        requests.post(request["url"], json=request["body"])
+        requests.post(callback["url"], json=callback["body"])
+
+    def _wrapper(self, title, buttons, parse_mode=None):
         user_id = self._chat_id
         message_id = self._message_id
         callback_id = self._callback_id
 
         api = API()
-        request = api.edit_message(user_id, message_id, title)
+        if parse_mode:
+            request = api.edit_message(user_id, message_id, title, parse_mode)
+        else:
+            request = api.edit_message(user_id, message_id, title)
         callback = api.answer_callback_query(callback_id)
 
         keyboard = API.inline_keyboard(*buttons)
