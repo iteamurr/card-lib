@@ -20,8 +20,7 @@ class API:
 
     def send_message(self, chat_id, text, parse_mode=None):
         request = {"url": "", "body": {}}
-        command = "sendMessage"
-        request["url"] = self._url.format(token=self._token, command=command)
+        request["url"] = self._url.format(self._token, "sendMessage")
 
         request["body"] = {"chat_id": chat_id, "text": text}
         if parse_mode:
@@ -31,8 +30,7 @@ class API:
 
     def edit_message(self, chat_id, message_id, text, parse_mode=None):
         request = {"url": "", "body": {}}
-        command = "editMessageText"
-        request["url"] = self._url.format(token=self._token, command=command)
+        request["url"] = self._url.format(self._token, "editMessageText")
 
         request["body"] = {
             "chat_id": chat_id,
@@ -48,8 +46,7 @@ class API:
             self, callback_query_id,
             text=None, show_alert=False):
         request = {"url": "", "body": {}}
-        command = "answerCallbackQuery"
-        request["url"] = self._url.format(token=self._token, command=command)
+        request["url"] = self._url.format(self._token, "answerCallbackQuery")
 
         request["body"] = {"callback_query_id": callback_query_id}
         if text:
