@@ -3,6 +3,7 @@
 # pylint: disable=missing-class-docstring
 # pylint: disable=missing-function-docstring
 
+import re
 import json
 import random
 import string
@@ -104,9 +105,7 @@ class Tools:
         second_part = random.randrange(1000000000, 10000000000)
         third_part = random.choice(string.ascii_letters)
 
-        key = f"K-{first_part}-{second_part}-{third_part}-00000-CL"
-
-        return key
+        return f"K-{first_part}-{second_part}-{third_part}-00000-CL"
 
     @staticmethod
     def keyboard_creator(collections, buttons_in_layer=2):
@@ -141,7 +140,8 @@ class Tools:
     def navigation_creator(
             number_of_items, level=0,
             items_in_page=8, number_of_navigation_buttons=5):
-        pages = number_of_items//items_in_page + bool(number_of_items%items_in_page)
+        pages = (number_of_items//items_in_page
+                 + bool(number_of_items%items_in_page))
 
         buttons = [[]]
         if number_of_items < number_of_navigation_buttons*items_in_page + 1:
@@ -185,3 +185,7 @@ class Tools:
                 buttons[0].append([button_name, button_data])
 
         return buttons
+
+    @staticmethod
+    def get_key_from_string(text):
+        return re.search(r"(K-\d+-\d+-\w-\d+-CL)", text)[0]
