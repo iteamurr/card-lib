@@ -133,4 +133,5 @@ dmypy.json
 
 # Project settings
 config.json
+settings.py
 .pylintrc
