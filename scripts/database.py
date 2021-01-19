@@ -272,3 +272,10 @@ class Update:
                 "UPDATE users SET {}=%s WHERE user_id=%s;"
             ).format(sql.Identifier(attribute)), (value, user_id)
         )
+
+    def collection_attribute(self, user_id, key, attribute, value):
+        self._cursor.execute(
+            sql.SQL(
+                "UPDATE collections SET {}=%s WHERE user_id=%s AND key=%s;"
+            ).format(sql.Identifier(attribute)), (value, user_id, key)
+        )
