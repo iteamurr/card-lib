@@ -45,14 +45,17 @@ class Handler:
         chat_id = callback_query["from"]["id"]
         message_id = callback_query["message"]["message_id"]
 
-        user_interaction = UserInteraction(chat_id, callback_id)
+        user_interaction = UserInteraction(chat_id, callback_id, data)
         switch_menu = SwitchMenu(chat_id, message_id, callback_id, data)
         if data == "private_office":
             switch_menu.private_office()
 
         elif "CL" in data:
             if "edit" in data:
-                switch_menu.edit_collection()
+                if "name" in data:
+                    user_interaction.edit_name()
+                else:
+                    switch_menu.edit_collection()
             else:
                 switch_menu.collection_info()
 
@@ -69,11 +72,11 @@ class Handler:
             if data == "locale_settings":
                 switch_menu.locale_settings()
             else:
-                user_interaction.change_locale(data)
+                user_interaction.change_locale()
                 switch_menu.locale_settings()
 
         elif "level" in data:
-            user_interaction.change_level(data)
+            user_interaction.change_level()
             switch_menu.collections()
 
     @staticmethod
@@ -85,8 +88,12 @@ class Handler:
             session = select_session.user_attribute(chat_id, "session")
 
         user_interaction = UserInteraction(chat_id)
-        if session and session[-2:] == "CL":
-            user_interaction.new_collection(message_text)
+        if session:
+            if session[-2:] == "CL":
+                if session[1] == "K":
+                    user_interaction.new_collection(message_text)
+                elif session[:4] == "EDNM":
+                    pass
 
 
 class SendMenu:
@@ -272,6 +279,9 @@ class SwitchMenu:
                 ["edit_description", f"edit_description_{key}"]
             ],
             [
+                ["delete_collection", f"delete_collection_{key}"]
+            ],
+            [
                 ["main", "private_office"],
                 ["back", key]
             ]
@@ -310,22 +320,27 @@ class SwitchMenu:
 
 
 class UserInteraction:
-    def __init__(self, chat_id, callback_id=None):
+    def __init__(self, chat_id, callback_id=None, data=None):
         self._chat_id = chat_id
         self._callback_id = callback_id
+        self._data = data
 
-    def change_locale(self, data):
+    def change_locale(self):
+        user_id = self._chat_id
+        data = self._data
+
         with Update("bot_users") as update_locale:
-            update_locale.user_attribute(self._chat_id, "locale", data[:2])
+            update_locale.user_attribute(user_id, "locale", data[:2])
 
-    def change_level(self, level):
+    def change_level(self):
+        user_id = self._chat_id
+        level = int(self._data[-2:])
+
         with Update("bot_users") as update_level:
-            level = int(level[-2:])
-            update_level.user_attribute(self._chat_id, "page_level", level)
+            update_level.user_attribute(user_id, "page_level", level)
 
     def add_collection(self):
         user_id = self._chat_id
-        callback_id = self._callback_id
         key = Tools.new_collection_key()
 
         with Select("bot_users") as select_user_locale, \
@@ -336,12 +351,7 @@ class UserInteraction:
         with Update("bot_users") as update_session:
             update_session.user_attribute(user_id, "session", key)
 
-        api = API()
-        request = api.send_message(user_id, text)
-        callback = api.answer_callback_query(callback_id)
-
-        requests.post(request["url"], json=request["body"])
-        requests.post(callback["url"], json=callback["body"])
+        self._send(text)
 
     def new_collection(self, collection_name):
         user_id = self._chat_id
@@ -368,3 +378,33 @@ class UserInteraction:
         request["body"] = {**request["body"], **keyboard}
 
         requests.post(request["url"], json=request["body"])
+
+    def edit_name(self):
+        user_id = self._chat_id
+        key = f"EDNM_{Tools.get_key_from_string(self._data)}"
+
+        if key[-2:] == "CL":
+            get_bot_message = "edit_collection_name"
+        else:
+            get_bot_message = "edit_card_name"
+
+        with Select("bot_users") as select_user_locale, \
+             Select("bot_messages") as select_message:
+            locale = select_user_locale.user_attribute(user_id, "locale")
+            text = select_message.bot_message(get_bot_message, locale)
+
+        with Update("bot_users") as update_session:
+            update_session.user_attribute(user_id, "session", key)
+
+        self._send(text)
+
+    def _send(self, text):
+        user_id = self._chat_id
+        callback_id = self._callback_id
+
+        api = API()
+        request = api.send_message(user_id, text)
+        callback = api.answer_callback_query(callback_id)
+
+        requests.post(request["url"], json=request["body"])
+        requests.post(callback["url"], json=callback["body"])
