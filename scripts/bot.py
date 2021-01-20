@@ -45,7 +45,9 @@ class Handler:
         chat_id = callback_query["from"]["id"]
         message_id = callback_query["message"]["message_id"]
 
-        user_interaction = UserInteraction(chat_id, callback_id, data)
+        user_interaction = UserInteraction(
+            chat_id, message_id,
+            callback_id, data)
         switch_menu = SwitchMenu(chat_id, message_id, callback_id, data)
         if data == "private_office":
             switch_menu.private_office()
@@ -93,7 +95,7 @@ class Handler:
                 if session[1] == "K":
                     user_interaction.new_collection(message_text)
                 elif session[:4] == "EDNM":
-                    pass
+                    user_interaction.new_collection_name(message_text)
 
 
 class SendMenu:
@@ -320,8 +322,9 @@ class SwitchMenu:
 
 
 class UserInteraction:
-    def __init__(self, chat_id, callback_id=None, data=None):
+    def __init__(self, chat_id, message_id=None, callback_id=None, data=None):
         self._chat_id = chat_id
+        self._message_id = message_id
         self._callback_id = callback_id
         self._data = data
 
@@ -381,6 +384,7 @@ class UserInteraction:
 
     def edit_name(self):
         user_id = self._chat_id
+        menu_id = self._message_id
         key = f"EDNM_{Tools.get_key_from_string(self._data)}"
 
         if key[-2:] == "CL":
@@ -393,10 +397,36 @@ class UserInteraction:
             locale = select_user_locale.user_attribute(user_id, "locale")
             text = select_message.bot_message(get_bot_message, locale)
 
-        with Update("bot_users") as update_session:
-            update_session.user_attribute(user_id, "session", key)
+        with Update("bot_users") as update_attribute:
+            update_attribute.user_attribute(user_id, "session", key)
+            update_attribute.user_attribute(user_id, "menu_id", menu_id)
 
         self._send(text)
+
+    def new_collection_name(self, new_name):
+        user_id = self._chat_id
+        text_data = "collection_name_changed"
+        value = new_name
+
+        with Select("bot_users") as select_attribute:
+            key_string = select_attribute.user_attribute(user_id, "session")
+            locale = select_attribute.user_attribute(user_id, "locale")
+            menu_id = select_attribute.user_attribute(user_id, "menu_id")
+
+        key = Tools.get_key_from_string(key_string)
+
+        with Update("bot_collections") as update_attribute:
+            update_attribute.collection_attribute(user_id, key, "name", value)
+
+        with Update("bot_users") as update_attribute:
+            update_attribute.user_attribute(user_id, "session", None)
+
+        with Select("bot_messages") as select_message:
+            text = select_message.bot_message(text_data, locale)
+
+        self._send(text)
+        switch_menu = SwitchMenu(user_id, menu_id, self._callback_id, key)
+        switch_menu.edit_collection()
 
     def _send(self, text):
         user_id = self._chat_id
