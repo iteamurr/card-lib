@@ -56,6 +56,8 @@ class Handler:
             if "edit" in data:
                 if "name" in data:
                     user_interaction.edit_name()
+                elif "description" in data:
+                    user_interaction.edit_description()
                 else:
                     switch_menu.edit_collection()
             else:
@@ -96,6 +98,8 @@ class Handler:
                     user_interaction.new_collection(message_text)
                 elif session[:4] == "EDNM":
                     user_interaction.new_collection_name(message_text)
+                elif session[:4] == "EDDC":
+                    user_interaction.new_collection_description(message_text)
 
 
 class SendMenu:
@@ -262,18 +266,25 @@ class SwitchMenu:
         with Select("bot_users") as select_attribute, \
              Select("bot_messages") as select_menu_title:
             locale = select_attribute.user_attribute(user_id, "locale")
-            title = select_menu_title.bot_message("collection_info", locale)
+            title1 = select_menu_title.bot_message("collection_info", locale)
+            attr = "collection_description_info"
+            title2 = select_menu_title.bot_message(attr, locale)
 
         with Select("bot_collections") as select_attribute:
             name = select_attribute.collection_attribute(user_id, key, "name")
+            attr = "description"
+            desc = select_attribute.collection_attribute(user_id, key, attr)
 
-        title = title.format(name)
+        if desc:
+            title = title2.format(name, desc)
+        else:
+            title = title1.format(name)
         buttons = Tools.button_identifier(template, locale)
         self._switch(title, buttons, "MarkdownV2")
 
     def edit_collection(self):
         user_id = self._chat_id
-        menu_title = "edit_collection_menu"
+        menu_title = "collection_description_info"
         key = Tools.get_key_from_string(self._data)
         template = [
             [
@@ -403,6 +414,27 @@ class UserInteraction:
 
         self._send(text)
 
+    def edit_description(self):
+        user_id = self._chat_id
+        menu_id = self._message_id
+        key = f"EDDC_{Tools.get_key_from_string(self._data)}"
+
+        if key[-2:] == "CL":
+            get_bot_message = "edit_collection_description"
+        else:
+            get_bot_message = "edit_card_description"
+
+        with Select("bot_users") as select_user_locale, \
+             Select("bot_messages") as select_message:
+            locale = select_user_locale.user_attribute(user_id, "locale")
+            text = select_message.bot_message(get_bot_message, locale)
+
+        with Update("bot_users") as update_attribute:
+            update_attribute.user_attribute(user_id, "session", key)
+            update_attribute.user_attribute(user_id, "menu_id", menu_id)
+
+        self._send(text)
+
     def new_collection_name(self, new_name):
         user_id = self._chat_id
         text_data = "collection_name_changed"
@@ -417,6 +449,32 @@ class UserInteraction:
 
         with Update("bot_collections") as update_attribute:
             update_attribute.collection_attribute(user_id, key, "name", value)
+
+        with Update("bot_users") as update_attribute:
+            update_attribute.user_attribute(user_id, "session", None)
+
+        with Select("bot_messages") as select_message:
+            text = select_message.bot_message(text_data, locale)
+
+        self._send(text)
+        switch_menu = SwitchMenu(user_id, menu_id, self._callback_id, key)
+        switch_menu.edit_collection()
+
+    def new_collection_description(self, new_description):
+        user_id = self._chat_id
+        text_data = "collection_description_changed"
+        value = new_description
+        attr = "description"
+
+        with Select("bot_users") as select_attribute:
+            key_string = select_attribute.user_attribute(user_id, "session")
+            locale = select_attribute.user_attribute(user_id, "locale")
+            menu_id = select_attribute.user_attribute(user_id, "menu_id")
+
+        key = Tools.get_key_from_string(key_string)
+
+        with Update("bot_collections") as update_attribute:
+            update_attribute.collection_attribute(user_id, key, attr, value)
 
         with Update("bot_users") as update_attribute:
             update_attribute.user_attribute(user_id, "session", None)
