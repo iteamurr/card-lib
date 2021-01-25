@@ -1,6 +1,7 @@
 """
     Bot launch module.
 """
+
 from flask import Flask
 from flask import request
 from flask import jsonify
@@ -13,16 +14,18 @@ app = Flask(__name__)
 
 @app.route(f"/{telegram['token']}", methods=["POST", "GET"])
 def get_updates():
-    """Getting user action.
+    """Get user action.
     """
+
     if request.method == "POST":
-        message = None
-        callback_query = None
         updates = request.get_json()
 
+        message = None
         if "message" in updates:
             message = updates["message"]
-        elif "callback_query" in updates:
+
+        callback_query = None
+        if "callback_query" in updates:
             callback_query = updates["callback_query"]
 
         handler = BotHandler(message, callback_query)
