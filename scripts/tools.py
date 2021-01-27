@@ -1,63 +1,117 @@
-# pylint: disable=import-error
-# pylint: disable=missing-module-docstring
-# pylint: disable=missing-class-docstring
-# pylint: disable=missing-function-docstring
+"""
+    Module with additional tools for working with a bot.
+"""
 
 import re
-import json
 import random
 import string
 from math import ceil
+import requests
 
-from database import Select, Insert
+from .config import telegram
+from .database import Select
+from .database import Insert
 
 
 class API:
-    def __init__(self):
-        with open("config.json") as config_json:
-            config = json.load(config_json)
-            self._token = config["telegram"]["token"]
-            self._url = config["telegram"]["url"]
+    """Working with the Telegram API.
+    """
 
-    def send_message(self, chat_id, text, parse_mode=None):
-        request = {"url": "", "body": {}}
-        request["url"] = self._url.format(self._token, "sendMessage")
+    @staticmethod
+    def send_message(chat_id, text, keyboard=None, parse_mode=None):
+        """Send a text message with additional options.
 
-        request["body"] = {"chat_id": chat_id, "text": text}
+        Parameters
+        ----------
+        chat_id : int
+            Unique identifier for the target chat.
+        text : str
+            Text of the message to be sent.
+        keyboard : dict, optional
+            Additional message interface in the form of buttons.
+        parse_mode : str, optional
+            Mode for parsing entities in the message text.
+        """
+
+        url = telegram["url"].format(telegram["token"], "sendMessage")
+
+        body = {"chat_id": chat_id, "text": text}
         if parse_mode:
-            request["body"]["parse_mode"] = parse_mode
+            body["parse_mode"] = parse_mode
+        if keyboard:
+            body = {**body, **keyboard}
 
-        return request
+        requests.post(url, json=body)
 
-    def edit_message(self, chat_id, message_id, text, parse_mode=None):
-        request = {"url": "", "body": {}}
-        request["url"] = self._url.format(self._token, "editMessageText")
+    @staticmethod
+    def edit_message(chat_id, message_id, text,
+                     keyboard=None, parse_mode=None):
+        """Edit bot message, to change the message text or the current menu.
 
-        request["body"] = {
-            "chat_id": chat_id,
-            "message_id": message_id,
-            "text": text
-        }
+        Parameters
+        ----------
+        chat_id : int
+            Unique identifier for the target chat.
+        message_id : int
+            Unique message identifier.
+        text : str
+            Text of the message to be sent.
+        keyboard : dict, optional
+            Additional message interface in the form of buttons.
+        parse_mode : str, optional
+            Mode for parsing entities in the message text.
+        """
+
+        url = telegram["url"].format(telegram["token"], "editMessageText")
+
+        body = {"chat_id": chat_id, "message_id": message_id, "text": text}
         if parse_mode:
-            request["body"]["parse_mode"] = parse_mode
+            body["parse_mode"] = parse_mode
+        if keyboard:
+            body = {**body, **keyboard}
 
-        return request
+        requests.post(url, json=body)
 
-    def answer_callback_query(
-            self, callback_query_id,
-            text=None, show_alert=False):
-        request = {"url": "", "body": {}}
-        request["url"] = self._url.format(self._token, "answerCallbackQuery")
+    @staticmethod
+    def answer_callback_query(callback_query_id, text=None, show_alert=False):
+        """Send a response to a callback request
+        sent from the inline keyboard.
 
-        request["body"] = {"callback_query_id": callback_query_id}
+        Parameters
+        ----------
+        callback_query_id : int
+            Unique identifier for the query to be answered.
+        text : str, optional
+            Text of the message to be sent.
+        show_alert : bool, optional
+            If true, then show a notification with text.
+        """
+
+        url = telegram["url"].format(telegram["token"], "answerCallbackQuery")
+
+        body = {"callback_query_id": callback_query_id}
         if text:
-            request["body"]["text"] = text
-            request["body"]["show_alert"] = show_alert
+            body["text"] = text
+            body["show_alert"] = show_alert
 
-        return request
+        if callback_query_id:
+            requests.post(url, json=body)
 
     @staticmethod
     def inline_keyboard(*button_data_list):
+        """Create an inline keyboard wrapper.
+
+        Parameters
+        ----------
+        *button_data_list
+            Button of an inline keyboard.
+
+        Returns
+        -------
+        keyboard : dict
+            Inline keyboard wrapper.
+        """
+
         keyboard = {
             "reply_markup":{
                 "inline_keyboard":[
@@ -65,27 +119,35 @@ class API:
             }
         }
 
-        button_index = 0
         inline_keyboard = keyboard["reply_markup"]["inline_keyboard"]
-        for button_data in button_data_list:
+        for index, button_data in enumerate(button_data_list):
             inline_keyboard.append([])
 
             for button_text, callback_data in button_data:
                 button = {"text": button_text, "callback_data": callback_data}
-                inline_keyboard[button_index].append(button)
-
-            button_index += 1
+                inline_keyboard[index].append(button)
 
         return keyboard
 
 
 class Tools:
+    """Additional tools for working with a bot.
+    """
+
     @staticmethod
     def check_new_user(message):
+        """Add a user to the database if he is not already there.
+
+        Parameters
+        ----------
+        message : dict
+            An object containing all information about the user.
+        """
+
         chat_id = message["chat"]["id"]
 
-        with Select("bot_users") as select_user:
-            user_existence = select_user.user_attribute(chat_id, "locale")
+        with Select("bot_users") as select:
+            user_existence = select.user_attribute(chat_id, "locale")
 
         if not user_existence:
             menu_id = message["message_id"]
@@ -93,53 +155,127 @@ class Tools:
             locale = message["from"]["language_code"]
             user_locale = locale if locale in ["en", "ru"] else "en"
 
-            with Insert("bot_users") as db_insert:
-                db_insert.new_user(
-                    user_id=chat_id, username=username,
-                    locale=user_locale, menu_id=menu_id
-                )
+            with Insert("bot_users") as insert:
+                insert.new_user(chat_id, username, user_locale, menu_id)
 
     @staticmethod
     def new_collection_key():
+        """Generate a random collection key.
+
+        Returns
+        -------
+        key : str
+            Unique identifier for the collection.
+        """
+
         first_part = random.randrange(100000000, 1000000000)
         second_part = random.randrange(1000000000, 10000000000)
         third_part = random.choice(string.ascii_letters)
 
-        return f"K-{first_part}-{second_part}-{third_part}-00000-CL"
+        key = f"K-{first_part}-{second_part}-{third_part}-00000-CL"
+        return key
 
     @staticmethod
-    def keyboard_creator(collections, buttons_in_layer=2):
+    def get_key_from_string(text):
+        """Get a unique collection key from a string.
+
+        Parameters
+        ----------
+        text : str
+            A string containing the collection key.
+
+        Returns
+        -------
+        key : str
+            Unique identifier for the collection.
+        """
+
+        key = re.search(r"(K-\d+-\d+-\w-\d+-CL)", text)[0]
+        return key
+
+    @staticmethod
+    def button_identifier(buttons, locale="en"):
+        """Get the name of buttons from the database.
+
+        Parameters
+        ----------
+        buttons : dict
+            A dict of buttons that need to define a name.
+        locale : str, optional
+            A variable defining the user's language
+            and any special preferences
+            that the user wants to see in their user interface.
+
+        Returns
+        -------
+        buttons : dict
+            List of buttons with identified names.
+        """
+
+        with Select("bot_messages") as select:
+            for button in buttons:
+                for data in button:
+                    data[0] = select.bot_message(data[0], locale)
+
+        return buttons
+
+    @staticmethod
+    def button_list_creator(list_of_items, buttons_in_layer=2):
+        """Create a list of buttons for specific items.
+
+        Parameters
+        ----------
+        list_of_items : list
+            List of items from which to create a list of buttons.
+        buttons_in_layer : int, optional
+            Variable responsible for the number of buttons in one layer.
+
+        Returns
+        -------
+        buttons : list
+            List of buttons.
+        """
+
         buttons = []
-        collection_length = len(collections)
-        layers = ceil(collection_length/buttons_in_layer)
+        item_list_size = len(list_of_items)
+        layers = ceil(item_list_size/buttons_in_layer)
 
         for layer in range(layers):
             buttons.append([])
             left_border = buttons_in_layer*layer
             right_border = buttons_in_layer*(layer+1)
 
-            for collection in collections[left_border:right_border]:
-                collection_data = collection[2]
-                collection_name = collection[3]
-                button_data = [collection_name, collection_data]
+            for item in list_of_items[left_border:right_border]:
+                data = item[2]
+                name = item[3]
+                button_data = [name, data]
 
                 buttons[layer].append(button_data)
 
         return buttons
 
     @staticmethod
-    def button_identifier(buttons, locale="en"):
-        with Select("bot_messages") as select_button_title:
-            for button in buttons:
-                for data in button:
-                    data[0] = select_button_title.bot_message(data[0], locale)
+    def navigation_creator(number_of_items, level=0,
+                           items_in_page=8, number_of_navigation_buttons=5):
+        """Creating menu navigation.
 
-        return buttons
+        Parameters
+        ----------
+        number_of_items : int
+            Total number of items being navigated.
+        level : int, optional
+            The level (page) the user is on.
+        items_in_page : int, optional
+            Number of items per page.
+        number_of_navigation_buttons : int, optional
+            Number of navigation buttons.
 
-    @staticmethod
-    def navigation_creator(
-            number_of_items, level=0,
-            items_in_page=8, number_of_navigation_buttons=5):
+        Returns
+        -------
+        buttons : list
+            List of navigation buttons.
+        """
+
         pages = (number_of_items//items_in_page
                  + bool(number_of_items%items_in_page))
 
@@ -185,7 +321,3 @@ class Tools:
                 buttons[0].append([button_name, button_data])
 
         return buttons
-
-    @staticmethod
-    def get_key_from_string(text):
-        return re.search(r"(K-\d+-\d+-\w-\d+-CL)", text)[0]
