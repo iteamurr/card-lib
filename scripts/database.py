@@ -395,3 +395,50 @@ class Update:
                 "UPDATE collections SET {}=%s WHERE user_id=%s AND key=%s;"
             ).format(sql.Identifier(attribute)), (value, user_id, key)
         )
+
+
+class Delete:
+    """Class responsible for deleting data from the database.
+    """
+
+    def __init__(self, db_name):
+        self._db_name = db_name
+        self._connection = None
+        self._cursor = None
+
+    def __enter__(self):
+        self._connection = psycopg2.connect(
+            dbname=self._db_name,
+            user=database["user"], password=database["passwd"],
+            host=database["host"], port=database["port"]
+        )
+        self._cursor = self._connection.cursor()
+
+        return self
+
+    def __exit__(self, exc_type, exc_value, traceback):
+        if traceback is None:
+            self._connection.commit()
+        else:
+            self._connection.rollback()
+
+        self._cursor.close()
+        self._connection.close()
+
+    def collection(self, user_id, key):
+        """Delete user collection.
+
+        Parameters
+        ----------
+        user_id : int
+            Unique identifier of the target user.
+        key : str
+            Unique identifier for the collection.
+        """
+
+        self._cursor.execute(
+            """DELETE FROM collections
+               WHERE user_id=%s AND
+                     key=%s;
+            """, (user_id, key)
+        )
