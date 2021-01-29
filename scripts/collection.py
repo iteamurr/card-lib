@@ -6,6 +6,7 @@ from .tools import API
 from .tools import Tools
 from .database import Select
 from .database import Update
+from .database import Delete
 
 
 class Collection:
@@ -41,6 +42,11 @@ class Collection:
                 self._edit_attribute_session("description")
             else:
                 self.edit_menu()
+        elif "delete" in self._data:
+            if "confirm" in self._data:
+                self.delete_confirmation()
+            else:
+                self.delete_menu()
         else:
             self.info()
 
@@ -99,6 +105,7 @@ class Collection:
 
         buttons = Tools.button_identifier(template, locale)
         keyboard = API.inline_keyboard(*buttons)
+
         API.edit_message(self._user_id, self._message_id, title,
                          keyboard=keyboard, parse_mode="MarkdownV2")
         API.answer_callback_query(self._callback_id)
@@ -138,8 +145,65 @@ class Collection:
 
         buttons = Tools.button_identifier(template, locale)
         keyboard = API.inline_keyboard(*buttons)
+
         API.edit_message(self._user_id, self._message_id, title,
                          keyboard=keyboard, parse_mode="MarkdownV2")
+        API.answer_callback_query(self._callback_id)
+
+    def delete_menu(self):
+        """Delete collection menu.
+        """
+
+        key = Tools.get_key_from_string(self._data)
+        template = [
+            [
+                ["confirm_deletion", f"confirm_delete_{key}"],
+                ["undo_delete",  f"edit_collection_{key}"]
+            ]
+        ]
+
+        with Select("bot_users") as select:
+            locale = select.user_attribute(self._user_id, "locale")
+
+        with Select("bot_messages") as select:
+            title = select.bot_message("delete_confirmation", locale)
+
+        buttons = Tools.button_identifier(template, locale)
+        keyboard = API.inline_keyboard(*buttons)
+
+        API.edit_message(self._user_id, self._message_id,
+                         title, keyboard=keyboard)
+        API.answer_callback_query(self._callback_id)
+
+    def delete_confirmation(self):
+        """Collection deletion confirmation menu.
+        """
+
+        key = Tools.get_key_from_string(self._data)
+        template = [
+            [
+                ["collections", "collections"]
+            ]
+        ]
+
+        with Select("bot_users") as select:
+            locale = select.user_attribute(self._user_id, "locale")
+            collections = select.user_attribute(self._user_id, "collections")
+
+        with Delete("bot_collections") as delete:
+            delete.collection(self._user_id, key)
+
+        with Update("bot_users") as update:
+            update.user_attribute(self._user_id, "collections", collections-1)
+
+        with Select("bot_messages") as select:
+            title = select.bot_message("collection_deleted", locale)
+
+        buttons = Tools.button_identifier(template, locale)
+        keyboard = API.inline_keyboard(*buttons)
+
+        API.edit_message(self._user_id, self._message_id,
+                         title, keyboard=keyboard)
         API.answer_callback_query(self._callback_id)
 
     def _edit_attribute_session(self, attribute):
