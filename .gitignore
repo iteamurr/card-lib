@@ -132,5 +132,5 @@ dmypy.json
 .vscode
 
 # Project settings
-config.json
-.pylintrc
+config.py
+settings.py
