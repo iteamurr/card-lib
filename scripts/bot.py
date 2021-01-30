@@ -188,6 +188,7 @@ class SwitchMenu:
 
         buttons = Tools.button_identifier(template, locale)
         keyboard = API.inline_keyboard(*buttons)
+
         API.edit_message(self._user_id, self._message_id,
                          title, keyboard=keyboard)
         API.answer_callback_query(self._callback_id)
@@ -213,6 +214,7 @@ class SwitchMenu:
 
         buttons = Tools.button_identifier(template, locale)
         keyboard = API.inline_keyboard(*buttons)
+
         API.edit_message(self._user_id, self._message_id,
                          title, keyboard=keyboard)
         API.answer_callback_query(self._callback_id)
@@ -246,11 +248,12 @@ class SwitchMenu:
         navigation = Tools.navigation_creator(len(collections_list), level)
 
         bord = slice(collections_in_page*level, collections_in_page*(level+1))
-        collection_buttons = Tools.keyboard_creator(collections_list[bord])
+        collection_buttons = Tools.button_list_creator(collections_list[bord])
 
         buttons = Tools.button_identifier(template, locale)
         all_buttons = (navigation + collection_buttons + buttons)
         keyboard = API.inline_keyboard(*all_buttons)
+
         API.edit_message(self._user_id, self._message_id,
                          title, keyboard=keyboard)
         API.answer_callback_query(self._callback_id)
@@ -280,6 +283,7 @@ class SwitchMenu:
         title = title.format(locale_list[locale])
         buttons = Tools.button_identifier(template, locale)
         keyboard = API.inline_keyboard(*buttons)
+
         API.edit_message(self._user_id, self._message_id, title,
                          keyboard=keyboard, parse_mode="MarkdownV2")
         API.answer_callback_query(self._callback_id)

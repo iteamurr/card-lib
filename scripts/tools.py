@@ -286,7 +286,7 @@ class Tools:
 
                 button_name = page_state.format(button + 1)
                 button_data = f"level_{'0'*(1 - button//10)}{button}"
-                buttons[0].append([button_name, button_data])
+                buttons[0].append(list(button_name, button_data))
 
         else:
             for button in range(number_of_navigation_buttons):
@@ -318,6 +318,6 @@ class Tools:
 
                 button_name = navigation[button].format(data)
                 button_data = f"level_{'0'*(1 - data//10)}{data - 1}"
-                buttons[0].append([button_name, button_data])
+                buttons[0].append(list(button_name, button_data))
 
         return buttons
