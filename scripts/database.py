@@ -85,6 +85,22 @@ class CreateTable:
             """
         )
 
+    def bot_cards(self):
+        """
+        """
+
+        self._cursor.execute(
+            """CREATE TABLE cards (
+               id serial PRIMARY KEY,
+               user_id integer,
+               key text,
+               card_key,
+               name text,
+               description text
+            );
+            """
+        )
+
 
 class Insert:
     """Class responsible for writing new data to the database.
@@ -326,6 +342,18 @@ class Select:
 
         collections = self._cursor.fetchall()
         return collections
+
+    def collection_cards(self, user_id, key):
+        """
+        """
+
+        self._cursor.execute(
+            """SELECT * FROM cards WHERE user_id=%s and key=%s;
+            """, (user_id, key)
+        )
+
+        cards = self._cursor.fetchall()
+        return cards
 
 
 class Update:
