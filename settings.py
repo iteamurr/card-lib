@@ -97,6 +97,10 @@ class SettingsPanel:
                                 "bring up a new menu",
                                 "en")
 
+            # Card
+            ins.new_bot_message("cards", "Collection '{}' cards:", "en")
+            ins.new_bot_message("add_card", "+ Add Card", "en")
+
     @staticmethod
     def ru_insert_messages():
         """Writing messages in Russian to the bot phrases database.
@@ -180,3 +184,7 @@ class SettingsPanel:
                                 "Коллекции больше не существует, " \
                                 "вызовите новое меню",
                                 "ru")
+
+            # Card
+            ins.new_bot_message("cards", "Карты коллекции «{}»:", "ru")
+            ins.new_bot_message("add_card", "+ Добавить карту", "en")
