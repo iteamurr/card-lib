@@ -63,6 +63,10 @@ class BotHandler:
         elif self._data == "settings":
             switch_menu.settings()
 
+        elif "card" in self._data:
+            if "collection_cards" in self._data:
+                switch_menu.cards()
+
         elif "CL" in self._data:
             collection.action_handler()
 
@@ -256,6 +260,44 @@ class SwitchMenu:
 
         API.edit_message(self._user_id, self._message_id,
                          title, keyboard=keyboard)
+        API.answer_callback_query(self._callback_id)
+
+    def cards(self, cards_in_page=8):
+        """
+        """
+
+        key = Tools.get_key_from_string(self._data)
+        template = [
+            [
+                ["add_card", "add_card"],
+                ["back", f"{key}"]
+            ]
+        ]
+
+        with Select("bot_users") as select:
+            locale = select.user_attribute(self._user_id, "locale")
+
+        with Select("bot_collections") as select:
+            level = select.collection_attribute(self._user_id, key,
+                                                "page_level")
+            collection_name = select.collection_attribute(self._user_id, key,
+                                                          "name")
+            cards_list = select.collection_cards(self._user_id, key)
+
+        with Select("bot_messages") as select:
+            title = select.bot_message("cards", locale)
+
+        navigation = Tools.navigation_creator(len(cards_list), level)
+
+        bord = slice(cards_in_page*level, cards_in_page*(level+1))
+        card_buttons = Tools.button_list_creator(cards_list[bord])
+
+        buttons = Tools.button_identifier(template, locale)
+        all_buttons = (navigation + card_buttons + buttons)
+        keyboard = API.inline_keyboard(*all_buttons)
+
+        API.edit_message(self._user_id, self._message_id,
+                         title.format(collection_name), keyboard=keyboard)
         API.answer_callback_query(self._callback_id)
 
     def locale_settings(self):
