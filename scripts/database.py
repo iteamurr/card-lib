@@ -80,7 +80,8 @@ class CreateTable:
                key text,
                name text,
                description text,
-               cards integer
+               cards integer,
+               page_level integer
             );
             """
         )
@@ -94,7 +95,7 @@ class CreateTable:
                id serial PRIMARY KEY,
                user_id integer,
                key text,
-               card_key,
+               card_key text,
                name text,
                description text
             );
@@ -201,9 +202,10 @@ class Insert:
                key,
                name,
                description,
-               cards
-            ) VALUES (%s, %s, %s, %s, %s);
-            """, (user_id, key, name, None, 0)
+               cards,
+               page_level
+            ) VALUES (%s, %s, %s, %s, %s, %s);
+            """, (user_id, key, name, None, 0, 0)
         )
 
 
