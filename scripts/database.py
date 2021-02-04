@@ -208,6 +208,21 @@ class Insert:
             """, (user_id, key, name, None, 0, 0)
         )
 
+    def new_card(self, user_id, key, card_key, name):
+        """
+        """
+
+        self._cursor.execute(
+            """INSERT INTO cards (
+               user_id,
+               key,
+               card_key,
+               name,
+               description
+            ) VALUES (%s, %s, %s, %s, %s, %s);
+            """, (user_id, key, card_key, name, None)
+        )
+
 
 class Select:
     """Class responsible for retrieving information from the database.
