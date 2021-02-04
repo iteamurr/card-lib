@@ -176,6 +176,18 @@ class Tools:
         return key
 
     @staticmethod
+    def new_card_key():
+        """
+        """
+
+        first_part = random.randrange(1000000000, 10000000000)
+        second_part = random.randrange(10000000000, 100000000000)
+        third_part = random.choice(string.ascii_letters)
+
+        key = f"K-{first_part}-{second_part}-{third_part}-00000-CR"
+        return key
+
+    @staticmethod
     def get_key_from_string(text):
         """Get a unique collection key from a string.
 
