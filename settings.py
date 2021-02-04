@@ -100,6 +100,13 @@ class SettingsPanel:
             # Card
             ins.new_bot_message("cards", "Collection '{}' cards:", "en")
             ins.new_bot_message("add_card", "+ Add Card", "en")
+            ins.new_bot_message("create_card",
+                                "Enter card name:",
+                                "en")
+            ins.new_bot_message("new_card",
+                                "The new card has been created. " \
+                                "You can already customize it:",
+                                "en")
 
     @staticmethod
     def ru_insert_messages():
@@ -188,3 +195,10 @@ class SettingsPanel:
             # Card
             ins.new_bot_message("cards", "Карты коллекции «{}»:", "ru")
             ins.new_bot_message("add_card", "+ Добавить карту", "en")
+            ins.new_bot_message("create_card",
+                                "Введите название карты:",
+                                "ru")
+            ins.new_bot_message("new_card",
+                                "Новая карта создана. " \
+                                "Вы уже можете настроить ее:",
+                                "ru")
