@@ -66,6 +66,8 @@ class BotHandler:
         elif "card" in self._data:
             if "collection_cards" in self._data:
                 switch_menu.cards()
+            elif self._data == "add_card":
+                bot_tools.add_card_session()
 
         elif "CL" in self._data:
             collection.action_handler()
@@ -103,6 +105,9 @@ class BotHandler:
                     bot_tools.new_collection(self._message_text)
                 else:
                     collection.session_handler()
+            elif session[-2:] == "CR":
+                if session[0] == "K":
+                    bot_tools.new_card(self._message_text)
 
 
 class SendMenu:
@@ -377,6 +382,24 @@ class BotTools:
 
         API.send_message(self._user_id, text)
         API.answer_callback_query(self._callback_id)
+    
+    def add_card_session(self):
+        """
+        """
+
+        with Select("bot_users") as select:
+            locale = select.user_attribute(self._user_id, "locale")
+
+        with Select("bot_messages") as select:
+            text = select.bot_message("create_card", locale)
+
+        card_key = Tools.new_card_key()
+
+        with Update("bot_users") as update:
+            update.user_attribute(self._user_id, "session", card_key)
+
+        API.send_message(self._user_id, text)
+        API.answer_callback_query(self._callback_id)
 
     def new_collection(self, name):
         """Creat a new collection.
@@ -403,4 +426,35 @@ class BotTools:
             update.user_attribute(self._user_id, "collections", collections+1)
 
         keyboard = API.inline_keyboard([[name, key]])
+        API.send_message(self._user_id, text, keyboard)
+
+    def new_card(self, name):
+        """
+        """
+
+        key = Tools.get_key_from_string(self._data)
+        with Select("bot_users") as select:
+            card_key = select.user_attribute(self._user_id, "session")
+            locale = select.user_attribute(self._user_id, "locale")
+            cards = select.user_attribute(self._user_id, "cards")
+
+        with Select("bot_collections") as select:
+            collection_cards = select.collection_attribute(self._user_id, key,
+                                                           "cards")
+
+        with Select("bot_messages") as select:
+            text = select.bot_message("new_card", locale)
+
+        with Insert("bot_collections") as insert:
+            insert.new_card(self._user_id, key, card_key, name)
+
+        with Update("bot_users") as update:
+            update.user_attribute(self._user_id, "session", None)
+            update.user_attribute(self._user_id, "cards", cards + 1)
+
+        with Update("bot_collections") as update:
+            update.collection_attribute(self._user_id, key, "cards",
+                                        collection_cards + 1)
+
+        keyboard = API.inline_keyboard([[name, card_key]])
         API.send_message(self._user_id, text, keyboard)
