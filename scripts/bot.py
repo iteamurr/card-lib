@@ -66,7 +66,7 @@ class BotHandler:
         elif "card" in self._data:
             if "collection_cards" in self._data:
                 switch_menu.cards()
-            elif self._data == "add_card":
+            elif "add_card" in self._data:
                 bot_tools.add_card_session()
 
         elif "CL" in self._data:
@@ -271,10 +271,10 @@ class SwitchMenu:
         """
         """
 
-        key = Tools.get_key_from_string(self._data)
+        key = Tools.get_key_from_string(self._data)[0]
         template = [
             [
-                ["add_card", "add_card"],
+                ["add_card", f"add_card_{key}"],
                 ["back", f"{key}"]
             ]
         ]
@@ -382,7 +382,7 @@ class BotTools:
 
         API.send_message(self._user_id, text)
         API.answer_callback_query(self._callback_id)
-    
+
     def add_card_session(self):
         """
         """
@@ -393,10 +393,12 @@ class BotTools:
         with Select("bot_messages") as select:
             text = select.bot_message("create_card", locale)
 
+        key = Tools.get_key_from_string(self._data)[0]
         card_key = Tools.new_card_key()
+        session = f"{key}_{card_key}"
 
         with Update("bot_users") as update:
-            update.user_attribute(self._user_id, "session", card_key)
+            update.user_attribute(self._user_id, "session", session)
 
         API.send_message(self._user_id, text)
         API.answer_callback_query(self._callback_id)
@@ -432,11 +434,13 @@ class BotTools:
         """
         """
 
-        key = Tools.get_key_from_string(self._data)
         with Select("bot_users") as select:
-            card_key = select.user_attribute(self._user_id, "session")
+            keys = select.user_attribute(self._user_id, "session")
             locale = select.user_attribute(self._user_id, "locale")
             cards = select.user_attribute(self._user_id, "cards")
+
+        keys = Tools.get_key_from_string(keys)
+        key, card_key = keys[0], keys[1]
 
         with Select("bot_collections") as select:
             collection_cards = select.collection_attribute(self._user_id, key,
