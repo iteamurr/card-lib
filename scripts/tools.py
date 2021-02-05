@@ -189,20 +189,10 @@ class Tools:
 
     @staticmethod
     def get_key_from_string(text):
-        """Get a unique collection key from a string.
-
-        Parameters
-        ----------
-        text : str
-            A string containing the collection key.
-
-        Returns
-        -------
-        key : str
-            Unique identifier for the collection.
+        """
         """
 
-        key = re.search(r"(K-\d+-\d+-\w-\d+-CL)", text)[0]
+        key = re.findall(r"(K-\d+-\d+-\w-\d+-\w\w)", text)
         return key
 
     @staticmethod
