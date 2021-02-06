@@ -219,7 +219,7 @@ class Insert:
                card_key,
                name,
                description
-            ) VALUES (%s, %s, %s, %s, %s, %s);
+            ) VALUES (%s, %s, %s, %s, %s);
             """, (user_id, key, card_key, name, None)
         )
 
