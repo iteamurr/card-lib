@@ -14,7 +14,7 @@ def existence_check(func):
     """
 
     def wrapper_func(self, *args, **kwargs):
-        key = Tools.get_key_from_string(self.data)
+        key = Tools.get_key_from_string(self.data)[0]
         with Select("bot_collections") as select:
             name = select.collection_attribute(self.user_id, key, "name")
 
@@ -142,7 +142,7 @@ class Collection:
         """Collection Public Key menu.
         """
 
-        key = Tools.get_key_from_string(self.data)
+        key = Tools.get_key_from_string(self.data)[0]
         template = [
             [
                 ["back", key]
@@ -167,7 +167,7 @@ class Collection:
         """Collection Edit menu.
         """
 
-        key = Tools.get_key_from_string(self.data)
+        key = Tools.get_key_from_string(self.data)[0]
         template = [
             [
                 ["edit_name", f"edit_name_{key}"],
@@ -207,7 +207,7 @@ class Collection:
         """Delete collection menu.
         """
 
-        key = Tools.get_key_from_string(self.data)
+        key = Tools.get_key_from_string(self.data)[0]
         template = [
             [
                 ["confirm_deletion", f"confirm_delete_{key}"],
@@ -232,7 +232,7 @@ class Collection:
         """Collection deletion confirmation menu.
         """
 
-        key = Tools.get_key_from_string(self.data)
+        key = Tools.get_key_from_string(self.data)[0]
         template = [
             [
                 ["collections", "collections"]
@@ -260,7 +260,7 @@ class Collection:
         API.answer_callback_query(self.callback_id)
 
     def _edit_attribute_session(self, attribute):
-        key = f"edit_{attribute}_{Tools.get_key_from_string(self.data)}"
+        key = f"edit_{attribute}_{Tools.get_key_from_string(self.data)[0]}"
 
         with Select("bot_users") as select:
             locale = select.user_attribute(self.user_id, "locale")
@@ -283,7 +283,7 @@ class Collection:
             locale = select.user_attribute(self.user_id, "locale")
             menu_id = select.user_attribute(self.user_id, "menu_id")
 
-        key = Tools.get_key_from_string(key_string)
+        key = Tools.get_key_from_string(key_string)[0]
 
         with Update("bot_collections") as update:
             update.collection_attribute(self.user_id, key, attribute, value)
