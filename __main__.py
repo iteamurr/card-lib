@@ -6,8 +6,10 @@ from flask import Flask
 from flask import request
 from flask import jsonify
 
-from scripts.bot import BotHandler
 from scripts.config import telegram
+from scripts.bot import CommandHandler
+from scripts.bot import SessionHandler
+from scripts.bot import CallbackQueryHandler
 
 
 app = Flask(__name__)
@@ -20,24 +22,21 @@ def get_updates():
     if request.method == "POST":
         updates = request.get_json()
 
-        message = None
         if "message" in updates:
             message = updates["message"]
 
-        callback_query = None
-        if "callback_query" in updates:
-            callback_query = updates["callback_query"]
-
-        handler = BotHandler(message, callback_query)
-
-        if "message" in updates:
             if "entities" in message:
-                handler.message_handler()
+                command_handler = CommandHandler(message)
+                command_handler.handler()
             else:
-                handler.session_handler()
+                session_handler = SessionHandler(message)
+                session_handler.handler()
 
         elif "callback_query" in updates:
-            handler.callback_query_handler()
+            callback_query = updates["callback_query"]
+
+            callback_query_handler = CallbackQueryHandler(callback_query)
+            callback_query_handler.handler()
 
         return jsonify(updates)
     return "<h1>Error!</h1>"
