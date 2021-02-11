@@ -372,6 +372,24 @@ class Select:
         cards = self._cursor.fetchall()
         return cards
 
+    def card_attribute(self, user_id, key, card_key, attribute):
+        """
+        """
+
+        self._cursor.execute(
+            sql.SQL(
+                """SELECT {} FROM cards
+                   WHERE user_id=%s AND
+                         key=%s AND
+                         card_key=%s;"""
+            ).format(sql.Identifier(attribute)), (user_id, key, card_key)
+        )
+
+        attribute_value = self._cursor.fetchone()
+        if attribute_value:
+            return attribute_value[0]
+        return None
+
 
 class Update:
     """Class responsible for updating data in the database.
