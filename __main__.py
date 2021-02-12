@@ -7,9 +7,9 @@ from flask import request
 from flask import jsonify
 
 from scripts.config import telegram
-from scripts.bot import CommandHandler
-from scripts.bot import SessionHandler
-from scripts.bot import CallbackQueryHandler
+from scripts.handlers import CommandHandler
+from scripts.handlers import SessionHandler
+from scripts.handlers import CallbackQueryHandler
 
 
 app = Flask(__name__)
