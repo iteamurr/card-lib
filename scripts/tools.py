@@ -1,120 +1,135 @@
 """
     Module with additional tools for working with a bot.
+
+Attributes:
+    ButtonTemplate (Tuple[str, str]): Variable defining the type of
+        button template.
 """
 
 import re
 import random
 import string
 from math import ceil
+from typing import Any
+from typing import Dict
+from typing import List
+from typing import Tuple
+from typing import Optional
 import requests
 
 from .config import telegram
 from .database import Select
 from .database import Insert
+from .database import Update
 
 
+ButtonTemplate = Tuple[str, str]
+
+
+# pylint: disable=unsubscriptable-object
 class API:
     """Working with the Telegram API.
     """
 
     @staticmethod
-    def send_message(chat_id, text, keyboard=None, parse_mode=None):
+    def send_message(
+        chat_id: int,
+        text: str,
+        keyboard: Optional[dict] = None,
+        parse_mode: Optional[str] = None
+    ) -> None:
         """Send a text message with additional options.
 
-        Parameters
-        ----------
-        chat_id : int
-            Unique identifier for the target chat.
-        text : str
-            Text of the message to be sent.
-        keyboard : dict, optional
-            Additional message interface in the form of buttons.
-        parse_mode : str, optional
-            Mode for parsing entities in the message text.
+        Args:
+            chat_id: Unique identifier for the target chat.
+            text: Text of the message to be sent.
+            keyboard: Additional message interface in the form of buttons.
+                Defaults to None.
+            parse_mode: Mode for parsing entities in the message text.
+                Defaults to None.
         """
 
         url = telegram["url"].format(telegram["token"], "sendMessage")
-
         body = {"chat_id": chat_id, "text": text}
+
         if parse_mode:
             body["parse_mode"] = parse_mode
-        if keyboard:
+        elif keyboard:
             body = {**body, **keyboard}
 
         requests.post(url, json=body)
 
     @staticmethod
-    def edit_message(chat_id, message_id, text,
-                     keyboard=None, parse_mode=None):
+    def edit_message(
+        chat_id: int,
+        message_id: int,
+        text: str,
+        keyboard: Optional[dict] = None,
+        parse_mode: Optional[str] = None
+    ) -> None:
         """Edit bot message, to change the message text or the current menu.
 
-        Parameters
-        ----------
-        chat_id : int
-            Unique identifier for the target chat.
-        message_id : int
-            Unique message identifier.
-        text : str
-            Text of the message to be sent.
-        keyboard : dict, optional
-            Additional message interface in the form of buttons.
-        parse_mode : str, optional
-            Mode for parsing entities in the message text.
+        Args:
+            chat_id: Unique identifier for the target chat.
+            message_id: Unique message identifier.
+            text: Text of the message to be sent.
+            keyboard: Additional message interface in the form of buttons.
+                Defaults to None.
+            parse_mode: Mode for parsing entities in the message text.
+                Defaults to None.
         """
 
         url = telegram["url"].format(telegram["token"], "editMessageText")
-
         body = {"chat_id": chat_id, "message_id": message_id, "text": text}
+
         if parse_mode:
             body["parse_mode"] = parse_mode
-        if keyboard:
+        elif keyboard:
             body = {**body, **keyboard}
 
         requests.post(url, json=body)
 
     @staticmethod
-    def answer_callback_query(callback_query_id, text=None, show_alert=False):
+    def answer_callback_query(
+        callback_query_id: int,
+        text: Optional[str] = None,
+        show_alert: Optional[bool] = False
+    ) -> None:
         """Send a response to a callback request
-        sent from the inline keyboard.
+           sent from the inline keyboard.
 
-        Parameters
-        ----------
-        callback_query_id : int
-            Unique identifier for the query to be answered.
-        text : str, optional
-            Text of the message to be sent.
-        show_alert : bool, optional
-            If true, then show a notification with text.
+        Args:
+            callback_query_id: Unique identifier for the query to be answered.
+            text: Text of the message to be sent. Defaults to None.
+            show_alert: If true, then show a notification with text.
+                Defaults to False.
         """
 
         url = telegram["url"].format(telegram["token"], "answerCallbackQuery")
-
         body = {"callback_query_id": callback_query_id}
+
         if text:
             body["text"] = text
             body["show_alert"] = show_alert
 
-        if callback_query_id:
-            requests.post(url, json=body)
+        requests.post(url, json=body)
 
     @staticmethod
-    def inline_keyboard(*button_data_list):
+    def inline_keyboard(
+        button_data_list: Tuple[Tuple[ButtonTemplate], ...]
+    ) -> Dict[str, Any]:
         """Create an inline keyboard wrapper.
 
-        Parameters
-        ----------
-        *button_data_list
-            Button of an inline keyboard.
+        Args:
+            button_data_list: Button of an inline keyboard.
 
-        Returns
-        -------
-        keyboard : dict
-            Inline keyboard wrapper.
+        Returns:
+            keyboard: Inline keyboard wrapper.
         """
 
         keyboard = {
-            "reply_markup":{
-                "inline_keyboard":[
+            "reply_markup": {
+                "inline_keyboard": [
                 ]
             }
         }
@@ -135,107 +150,195 @@ class Tools:
     """
 
     @staticmethod
-    def check_new_user(message):
-        """Add a user to the database if he is not already there.
+    def check_user_existence(user_id: int) -> bool:
+        """Check if a user is in the database.
 
-        Parameters
-        ----------
-        message : dict
-            An object containing all information about the user.
+        Args:
+            user_id: Unique identifier of the target user.
+
+        Returns:
+            True for success, False otherwise.
         """
-
-        chat_id = message["chat"]["id"]
 
         with Select("bot_users") as select:
-            user_existence = select.user_attribute(chat_id, "locale")
-
-        if not user_existence:
-            menu_id = message["message_id"]
-            username = message["from"]["username"]
-            locale = message["from"]["language_code"]
-            user_locale = locale if locale in ["en", "ru"] else "en"
-
-            with Insert("bot_users") as insert:
-                insert.new_user(chat_id, username, user_locale, menu_id)
+            user_existence = select.user_attribute(user_id, "locale")
+        return bool(user_existence)
 
     @staticmethod
-    def new_collection_key():
-        """Generate a random collection key.
+    def add_new_user(message: Dict[str, Any]) -> None:
+        """Insert new user to database.
 
-        Returns
-        -------
-        key : str
-            Unique identifier for the collection.
+        Args:
+            message: An object containing all information about the user.
         """
 
-        first_part = random.randrange(100000000, 1000000000)
-        second_part = random.randrange(1000000000, 10000000000)
+        user_id = message["chat"]["id"]
+        menu_id = message["message_id"]
+        username = message["from"]["username"]
+        locale = Tools.define_locale(message["from"]["language_code"])
+
+        with Insert("bot_users") as insert:
+            insert.new_user(user_id, username, locale, menu_id)
+
+    @staticmethod
+    def define_locale(locale: str) -> str:
+        """Define the user's locale.
+
+        Args:
+            locale: A variable defining the user's language and
+                any special preferences that
+                the user wants to see in their user interface.
+
+        Returns:
+            Locale for success, "en" otherwise.
+        """
+
+        locales = ["en", "ru"]
+        return locale if locale in locales else "en"
+
+    @staticmethod
+    def define_session(data: str) -> List[str]:
+        """Get all session details.
+
+        Args:
+            data: String containing information about the session.
+
+        Returns:
+            session: Session details list.
+        """
+
+        session = re.findall(r"([^/]+)", data)
+        return session
+
+    @staticmethod
+    def get_session(user_id: int) -> str:
+        """Get current user session.
+
+        Args:
+            user_id: Unique identifier of the target user.
+
+        Returns:
+            session: User session.
+        """
+
+        with Select("bot_users") as select:
+            session = select.user_attribute(user_id, "session")
+        return session
+
+    @staticmethod
+    def identified_button_template(
+        header: str,
+        data: str,
+        name: str,
+        locale: Optional[str] = "en"
+    ) -> ButtonTemplate:
+        """Define a name and create a button from a template.
+
+        Args:
+            header: The section the button belongs to.
+            data: Data associated with the callback button.
+            name: Button name.
+            locale: A variable defining the user's language and
+                any special preferences that
+                the user wants to see in their user interface.
+                Defaults to "en".
+
+        Returns:
+            ButtonTemplate: Identified button template.
+        """
+
+        with Select("bot_messages") as select:
+            identified_name = select.bot_message(name, locale)
+
+        return (f"{identified_name}", f"{header}/{data}")
+
+    @staticmethod
+    def button_template(header: str, data: str, name: str) -> ButtonTemplate:
+        """Create a button from a template.
+
+        Args:
+            header: The section the button belongs to.
+            data: Data associated with the callback button.
+            name: Button name.
+
+        Returns:
+            ButtonTemplate: Identified button template.
+        """
+
+        return (f"{name}", f"{header}/{data}")
+
+    @staticmethod
+    def change_locale(user_id: int, data: str) -> None:
+        """Change user locale.
+
+        Args:
+            user_id: Unique identifier of the target user.
+            data: user session information.
+        """
+
+        with Update("bot_users") as update:
+            update.user_attribute(user_id, "locale", data[:2])
+
+    @staticmethod
+    def change_level(user_id: int, data: str) -> None:
+        """Change the page number (level) of a user.
+
+        Args:
+            user_id: Unique identifier of the target user.
+            data: user session information.
+        """
+
+        with Update("bot_users") as update:
+            update.user_attribute(user_id, "page_level", int(data[-2:]))
+
+    @staticmethod
+    def new_collection_key() -> str:
+        """Generate a random collection key.
+
+        Returns:
+            key: Unique identifier for the collection.
+        """
+
+        first_part = random.randrange(1000, 10000)
+        second_part = random.randrange(1000, 10000)
         third_part = random.choice(string.ascii_letters)
 
         key = f"K-{first_part}-{second_part}-{third_part}-00000-CL"
         return key
 
     @staticmethod
-    def new_card_key():
-        """
-        """
+    def new_card_key() -> str:
+        """Generate a random card key.
 
-        first_part = random.randrange(1000000000, 10000000000)
-        second_part = random.randrange(10000000000, 100000000000)
+        Returns:
+            card_key: Unique identifier for the card.
+        """
+        first_part = random.randrange(1000, 10000)
+        second_part = random.randrange(1000, 10000)
         third_part = random.choice(string.ascii_letters)
 
-        key = f"K-{first_part}-{second_part}-{third_part}-00000-CR"
-        return key
+        card_key = f"K-{first_part}-{second_part}-{third_part}-00000-CR"
+        return card_key
 
     @staticmethod
-    def get_key_from_string(text):
-        """
-        """
-
-        key = re.findall(r"(K-\d+-\d+-\w-\d+-\w\w)", text)
-        return key
-
-    @staticmethod
-    def button_identifier(buttons, locale="en"):
-        """Get the name of buttons from the database.
-
-        Parameters
-        ----------
-        buttons : dict
-            A dict of buttons that need to define a name.
-        locale : str, optional
-            A variable defining the user's language
-            and any special preferences
-            that the user wants to see in their user interface.
-
-        Returns
-        -------
-        buttons : dict
-            List of buttons with identified names.
-        """
-
-        with Select("bot_messages") as select:
-            for button in buttons:
-                for data in button:
-                    data[0] = select.bot_message(data[0], locale)
-
-        return buttons
-
-    @staticmethod
-    def button_list_creator(list_of_items, buttons_in_layer=2):
+    def button_list_creator(
+        list_of_items: List[Any],
+        header: str,
+        data: str,
+        buttons_in_layer: Optional[int] = 2
+    ) -> List[List[str, str]]:
         """Create a list of buttons for specific items.
 
-        Parameters
-        ----------
-        list_of_items : list
-            List of items from which to create a list of buttons.
-        buttons_in_layer : int, optional
-            Variable responsible for the number of buttons in one layer.
+        Args:
+            list_of_items: List of items from which to create a
+                list of buttons.
+            header: The section the button belongs to.
+            data: Data associated with the callback button.
+            buttons_in_layer: Variable responsible for the number of
+                buttons in one layer. Defaults to 2.
 
-        Returns
-        -------
-        buttons : list
-            List of buttons.
+        Returns:
+            buttons: List of buttons.
         """
 
         buttons = []
@@ -248,7 +351,7 @@ class Tools:
             right_border = buttons_in_layer*(layer+1)
 
             for item in list_of_items[left_border:right_border]:
-                data = item[2]
+                data = f"{header}/{data}/{item[2]}"
                 name = item[3]
                 button_data = [name, data]
 
@@ -257,25 +360,23 @@ class Tools:
         return buttons
 
     @staticmethod
-    def navigation_creator(number_of_items, level=0,
-                           items_in_page=8, number_of_navigation_buttons=5):
+    def navigation_creator(
+        number_of_items: int,
+        level: Optional[int] = 0,
+        items_in_page: Optional[int] = 8,
+        number_of_navigation_buttons: Optional[int] = 5
+    ) -> List[List[str, str]]:
         """Creating menu navigation.
 
-        Parameters
-        ----------
-        number_of_items : int
-            Total number of items being navigated.
-        level : int, optional
-            The level (page) the user is on.
-        items_in_page : int, optional
-            Number of items per page.
-        number_of_navigation_buttons : int, optional
-            Number of navigation buttons.
+        Args:
+            number_of_items: Total number of items being navigated.
+            level: The level (page) the user is on. Defaults to 0.
+            items_in_page: Number of items per page. Defaults to 8.
+            number_of_navigation_buttons: Number of navigation buttons.
+                Defaults to 5.
 
-        Returns
-        -------
-        buttons : list
-            List of navigation buttons.
+        Returns:
+            buttons: List of navigation buttons.
         """
 
         pages = (number_of_items//items_in_page
