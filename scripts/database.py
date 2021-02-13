@@ -2,22 +2,32 @@
     Database module.
 """
 
+from __future__ import annotations
+from typing import Type
+from typing import Union
+from typing import Optional
+from types import TracebackType
 import psycopg2
 from psycopg2 import sql
 
 from .config import database
 
 
+# pylint: disable=unsubscriptable-object
 class CreateTable:
     """Class responsible for creating tables in the database.
+
+    Attributes:
+        db_name: Name of the database to connect to.
     """
 
-    def __init__(self, db_name):
+    def __init__(self, db_name: str) -> None:
         self.db_name = db_name
+
         self._connection = None
         self._cursor = None
 
-    def __enter__(self):
+    def __enter__(self) -> CreateTable:
         self._connection = psycopg2.connect(
             dbname=self.db_name,
             user=database["user"], password=database["passwd"],
@@ -27,7 +37,11 @@ class CreateTable:
 
         return self
 
-    def __exit__(self, exc_type, exc_value, traceback):
+    def __exit__(self,
+        exc_type: Optional[Type[BaseException]],
+        exc_value: Optional[BaseException],
+        traceback: Optional[TracebackType]
+    ) -> CreateTable:
         if traceback is None:
             self._connection.commit()
         else:
@@ -36,7 +50,7 @@ class CreateTable:
         self._cursor.close()
         self._connection.close()
 
-    def bot_messages(self):
+    def bot_messages(self) -> None:
         """Create a bot message table.
         """
 
@@ -50,7 +64,7 @@ class CreateTable:
             """
         )
 
-    def bot_users(self):
+    def bot_users(self) -> None:
         """Create a bot users table.
         """
 
@@ -69,7 +83,7 @@ class CreateTable:
             """
         )
 
-    def bot_collections(self):
+    def bot_collections(self) -> None:
         """Create a bot user collections table.
         """
 
@@ -86,8 +100,8 @@ class CreateTable:
             """
         )
 
-    def bot_cards(self):
-        """
+    def bot_cards(self) -> None:
+        """create a bot user card table.
         """
 
         self._cursor.execute(
@@ -105,14 +119,18 @@ class CreateTable:
 
 class Insert:
     """Class responsible for writing new data to the database.
+
+    Attributes:
+        db_name: Name of the database to connect to.
     """
 
-    def __init__(self, db_name):
+    def __init__(self, db_name) -> None:
         self._db_name = db_name
+
         self._connection = None
         self._cursor = None
 
-    def __enter__(self):
+    def __enter__(self) -> Insert:
         self._connection = psycopg2.connect(
             dbname=self._db_name,
             user=database["user"], password=database["passwd"],
@@ -122,7 +140,11 @@ class Insert:
 
         return self
 
-    def __exit__(self, exc_type, exc_value, traceback):
+    def __exit__(self,
+        exc_type: Optional[Type[BaseException]],
+        exc_value: Optional[BaseException],
+        traceback: Optional[TracebackType]
+    ) -> None:
         if traceback is None:
             self._connection.commit()
         else:
@@ -131,19 +153,20 @@ class Insert:
         self._cursor.close()
         self._connection.close()
 
-    def new_bot_message(self, data, message, locale="en"):
+    def new_bot_message(
+        self,
+        data: str,
+        message: str,
+        locale: Optional[str] = "en"
+    ) -> None:
         """Insert a new bot message.
 
-        Parameters
-        ----------
-        data : str
-            Unique message identifier.
-        message : str
-            Message text.
-        locale : str, optional
-            A variable defining the user's language
-            and any special preferences
-            that the user wants to see in their user interface.
+        Args:
+            data: Unique message identifier.
+            message: Message text.
+            locale: A variable defining the user's language and
+                any special preferences that the user wants to see in
+                their user interface. Defaults to "en".
         """
 
         self._cursor.execute(
@@ -152,21 +175,22 @@ class Insert:
             """, (locale, data, message)
         )
 
-    def new_user(self, user_id, username, locale, menu_id):
+    def new_user(
+        self,
+        user_id: int,
+        username: str,
+        locale: str,
+        menu_id: int
+    ) -> None:
         """Register new user.
 
-        Parameters
-        ----------
-        user_id : int
-            Unique identifier of the target user.
-        username : str
-            User's username.
-        locale : str
-            A variable defining the user's language
-            and any special preferences
-            that the user wants to see in their user interface.
-        menu_id : int
-            Unique menu identifier.
+        Args:
+            user_id: Unique identifier of the target user.
+            username: User's username.
+            locale: A variable defining the user's language and
+                    any special preferences that the user wants to see in
+                    their user interface.
+            menu_id: Unique menu identifier.
         """
 
         self._cursor.execute(
@@ -183,17 +207,13 @@ class Insert:
             """, (user_id, username, locale, 0, 0, menu_id, 0, None)
         )
 
-    def new_collection(self, user_id, key, name):
+    def new_collection(self, user_id: int, key: str, name: str) -> None:
         """Insert a new collection.
 
-        Parameters
-        ----------
-        user_id : int
-            Unique identifier of the target user.
-        key : str
-            Unique identifier for the collection.
-        name : str
-            Collection name.
+        Args:
+            user_id: Unique identifier of the target user.
+            key: Unique identifier for the collection.
+            name: Collection name.
         """
 
         self._cursor.execute(
@@ -208,8 +228,20 @@ class Insert:
             """, (user_id, key, name, None, 0, 0)
         )
 
-    def new_card(self, user_id, key, card_key, name):
-        """
+    def new_card(
+        self,
+        user_id: int,
+        key: str,
+        card_key: str,
+        name: str
+    ) -> None:
+        """Insert a new card.
+
+        Args:
+            user_id: Unique identifier of the target user.
+            key: Unique identifier for the collection.
+            card_key: Unique identifier for the card.
+            name: Card name.
         """
 
         self._cursor.execute(
@@ -226,14 +258,18 @@ class Insert:
 
 class Select:
     """Class responsible for retrieving information from the database.
+
+    Attributes:
+        db_name: Name of the database to connect to.
     """
 
-    def __init__(self, db_name):
+    def __init__(self, db_name: str) -> None:
         self._db_name = db_name
+
         self._connection = None
         self._cursor = None
 
-    def __enter__(self):
+    def __enter__(self) -> Select:
         self._connection = psycopg2.connect(
             dbname=self._db_name,
             user=database["user"], password=database["passwd"],
@@ -243,7 +279,11 @@ class Select:
 
         return self
 
-    def __exit__(self, exc_type, exc_value, traceback):
+    def __exit__(self,
+        exc_type: Optional[Type[BaseException]],
+        exc_value: Optional[BaseException],
+        traceback: Optional[TracebackType]
+    ) -> None:
         if traceback is None:
             self._connection.commit()
         else:
@@ -252,22 +292,21 @@ class Select:
         self._cursor.close()
         self._connection.close()
 
-    def bot_message(self, data, locale="en"):
+    def bot_message(
+        self,
+        data: str,
+        locale: Optional[str] = "en"
+    ) -> Union[str, None]:
         """Get bot message.
 
-        Parameters
-        ----------
-        data : str
-            Unique message identifier.
-        locale : str, optional
-            A variable defining the user's language
-            and any special preferences
-            that the user wants to see in their user interface.
+        Args:
+            data: Unique message identifier.
+            locale: A variable defining the user's language and
+                any special preferences that the user wants to see in
+                their user interface. Defaults to "en".
 
-        Returns
-        -------
-        message : str
-            Bot message if successful, None otherwise.
+        Returns:
+            message: Bot message if successful, None otherwise.
         """
 
         self._cursor.execute(
@@ -282,20 +321,19 @@ class Select:
             return message[0]
         return None
 
-    def user_attribute(self, user_id, attribute):
+    def user_attribute(
+        self,
+        user_id: int,
+        attribute: str
+    ) -> Union[str, int, None]:
         """Get user attribute.
 
-        Parameters
-        ----------
-        user_id : int
-            Unique identifier of the target user.
-        attribute : str
-            The name of the attribute whose value you want to get.
+        Args:
+            user_id: Unique identifier of the target user.
+            attribute: The name of the attribute whose value you want to get.
 
-        Returns
-        -------
-        attribute_value : str or int
-            Attribute value if successful, None otherwise.
+        Returns:
+            attribute_value: Attribute value if successful, None otherwise.
         """
 
         self._cursor.execute(
@@ -309,22 +347,21 @@ class Select:
             return attribute_value[0]
         return None
 
-    def collection_attribute(self, user_id, key, attribute):
+    def collection_attribute(
+        self,
+        user_id: int,
+        key: str,
+        attribute: str
+    ) -> Union[str, int, None]:
         """Get collection attribute.
 
-        Parameters
-        ----------
-        user_id : int
-            Unique identifier of the target user.
-        key : str
-            Unique identifier for the collection.
-        attribute : str
-            The name of the attribute whose value you want to get.
+        Args:
+            user_id: Unique identifier of the target user.
+            key: Unique identifier for the collection.
+            attribute: The name of the attribute whose value you want to get.
 
-        Returns
-        -------
-        attribute_value : str or int
-            Attribute value if successful, None otherwise.
+        Returns:
+            attribute_value: Attribute value if successful, None otherwise.
         """
 
         self._cursor.execute(
@@ -338,42 +375,23 @@ class Select:
             return attribute_value[0]
         return None
 
-    def user_collections(self, user_id):
-        """Get all user collections.
+    def card_attribute(
+        self,
+        user_id: int,
+        key: str,
+        card_key: int,
+        attribute: str
+    ) -> Union[str, int, None]:
+        """Get card attribute.
 
-        Parameters
-        ----------
-        user_id : int
-            Unique identifier of the target user.
+        Args:
+            user_id: Unique identifier of the target user.
+            key: Unique identifier for the collection.
+            card_key: Unique identifier for the card.
+            attribute: The name of the attribute whose value you want to get.
 
-        Returns
-        -------
-        collections : list
-            All user collections.
-        """
-
-        self._cursor.execute(
-            """SELECT * FROM collections WHERE user_id=%s;
-            """, (user_id,)
-        )
-
-        collections = self._cursor.fetchall()
-        return collections
-
-    def collection_cards(self, user_id, key):
-        """
-        """
-
-        self._cursor.execute(
-            """SELECT * FROM cards WHERE user_id=%s and key=%s;
-            """, (user_id, key)
-        )
-
-        cards = self._cursor.fetchall()
-        return cards
-
-    def card_attribute(self, user_id, key, card_key, attribute):
-        """
+        Returns:
+            attribute_value: Attribute value if successful, None otherwise.
         """
 
         self._cursor.execute(
@@ -390,17 +408,65 @@ class Select:
             return attribute_value[0]
         return None
 
+    def user_collections(
+        self,
+        user_id: int
+    ) -> Union(list[tuple[str, ...], ...], None):
+        """Get all user collections.
+
+        Args:
+            user_id: Unique identifier of the target user.
+
+        Returns:
+            collections: All user collections.
+        """
+
+        self._cursor.execute(
+            """SELECT * FROM collections WHERE user_id=%s;
+            """, (user_id,)
+        )
+
+        collections = self._cursor.fetchall()
+        return collections
+
+    def collection_cards(
+        self,
+        user_id: int,
+        key: str
+    ) -> Union(list[tuple[str, ...], ...], None):
+        """Get user collection cards.
+
+        Args:
+            user_id: Unique identifier of the target user.
+            key: Unique identifier for the collection.
+
+        Returns:
+            cards: All collection cards.
+        """
+
+        self._cursor.execute(
+            """SELECT * FROM cards WHERE user_id=%s and key=%s;
+            """, (user_id, key)
+        )
+
+        cards = self._cursor.fetchall()
+        return cards
+
 
 class Update:
     """Class responsible for updating data in the database.
+
+    Attributes:
+        db_name: Name of the database to connect to.
     """
 
-    def __init__(self, db_name):
+    def __init__(self, db_name: str) -> None:
         self._db_name = db_name
+
         self._connection = None
         self._cursor = None
 
-    def __enter__(self):
+    def __enter__(self) -> Update:
         self._connection = psycopg2.connect(
             dbname=self._db_name,
             user=database["user"], password=database["passwd"],
@@ -410,7 +476,11 @@ class Update:
 
         return self
 
-    def __exit__(self, exc_type, exc_value, traceback):
+    def __exit__(self,
+        exc_type: Optional[Type[BaseException]],
+        exc_value: Optional[BaseException],
+        traceback: Optional[TracebackType]
+    ) -> None:
         if traceback is None:
             self._connection.commit()
         else:
@@ -419,17 +489,19 @@ class Update:
         self._cursor.close()
         self._connection.close()
 
-    def user_attribute(self, user_id, attribute, value):
+    def user_attribute(
+        self,
+        user_id: int,
+        attribute: str,
+        value: Union[str, int]
+    ) -> None:
         """Update user attribute value.
 
-        Parameters
-        ----------
-        user_id : int
-            Unique identifier of the target user.
-        attribute : str
-            The name of the attribute whose value you want to update.
-        value : str or int
-            New attribute value.
+        Args:
+            user_id: Unique identifier of the target user.
+            attribute: The name of the attribute whose
+                value you want to update.
+            value: New attribute value.
         """
 
         self._cursor.execute(
@@ -438,19 +510,21 @@ class Update:
             ).format(sql.Identifier(attribute)), (value, user_id)
         )
 
-    def collection_attribute(self, user_id, key, attribute, value):
+    def collection_attribute(
+        self,
+        user_id: int,
+        key: str,
+        attribute: str,
+        value: Union[str, int]
+    ) -> None:
         """Update collection attribute value.
 
-        Parameters
-        ----------
-        user_id : int
-            Unique identifier of the target user.
-        key : str
-            Unique identifier for the collection.
-        attribute : str
-            The name of the attribute whose value you want to update.
-        value : str or int
-            New attribute value.
+        Args:
+            user_id: Unique identifier of the target user.
+            key: Unique identifier for the collection.
+            attribute: The name of the attribute whose
+                value you want to update.
+            value: New attribute value.
         """
 
         self._cursor.execute(
@@ -462,14 +536,18 @@ class Update:
 
 class Delete:
     """Class responsible for deleting data from the database.
+
+    Attributes:
+        db_name: Name of the database to connect to.
     """
 
-    def __init__(self, db_name):
+    def __init__(self, db_name: str) -> None:
         self._db_name = db_name
+
         self._connection = None
         self._cursor = None
 
-    def __enter__(self):
+    def __enter__(self) -> Delete:
         self._connection = psycopg2.connect(
             dbname=self._db_name,
             user=database["user"], password=database["passwd"],
@@ -479,7 +557,11 @@ class Delete:
 
         return self
 
-    def __exit__(self, exc_type, exc_value, traceback):
+    def __exit__(self,
+        exc_type: Optional[Type[BaseException]],
+        exc_value: Optional[BaseException],
+        traceback: Optional[TracebackType]
+    ) -> None:
         if traceback is None:
             self._connection.commit()
         else:
@@ -488,15 +570,12 @@ class Delete:
         self._cursor.close()
         self._connection.close()
 
-    def collection(self, user_id, key):
+    def collection(self, user_id: int, key: str) -> None:
         """Delete user collection.
 
-        Parameters
-        ----------
-        user_id : int
-            Unique identifier of the target user.
-        key : str
-            Unique identifier for the collection.
+        Args:
+            user_id: Unique identifier of the target user.
+            key: Unique identifier for the collection.
         """
 
         self._cursor.execute(

@@ -2,6 +2,8 @@
     Module with basic, non-changing user menus.
 """
 
+from typing import Any
+
 from ..tools import API
 from ..tools import Tools
 from ..database import Select
@@ -37,8 +39,10 @@ class SendMenu:
         with Select("bot_messages") as select:
             title = select.bot_message("private_office", locale)
 
-        keyboard = API.inline_keyboard(buttons)
-        API.send_message(self.user_id, title, keyboard=keyboard)
+        API.send_message(
+            self.user_id, title,
+            keyboard=API.inline_keyboard(buttons)
+        )
 
     def settings(self) -> None:
         """Send a user's Settings menu.
@@ -65,15 +69,17 @@ class SendMenu:
         with Select("bot_messages") as select:
             title = select.bot_message("settings", locale)
 
-        keyboard = API.inline_keyboard(buttons)
-        API.send_message(self.user_id, title, keyboard=keyboard)
+        API.send_message(
+            self.user_id, title,
+            keyboard=API.inline_keyboard(buttons)
+        )
 
 
 class SwitchMenu:
     """User menu switching.
     """
 
-    def __init__(self, callback_query):
+    def __init__(self, callback_query: dict[str, Any]) -> None:
         self.callback_id = callback_query["id"]
         self.user_id = callback_query["from"]["id"]
         self.message_id = callback_query["message"]["message_id"]
@@ -101,10 +107,9 @@ class SwitchMenu:
         with Select("bot_messages") as select:
             title = select.bot_message("private_office", locale)
 
-        keyboard = API.inline_keyboard(buttons)
         API.edit_message(
-            self.user_id, self.message_id,
-            title, keyboard=keyboard
+            self.user_id, self.message_id, title,
+            keyboard=API.inline_keyboard(buttons)
         )
         API.answer_callback_query(self.callback_id)
 
@@ -133,10 +138,9 @@ class SwitchMenu:
         with Select("bot_messages") as select:
             title = select.bot_message("settings", locale)
 
-        keyboard = API.inline_keyboard(buttons)
         API.edit_message(
-            self.user_id, self.message_id,
-            title, keyboard=keyboard
+            self.user_id, self.message_id, title,
+            keyboard=API.inline_keyboard(buttons)
         )
         API.answer_callback_query(self.callback_id)
 
@@ -172,13 +176,12 @@ class SwitchMenu:
         )
 
         with Select("bot_messages") as select:
-            title = select.bot_message("current_language", locale)
-
-        title = title.format(locale_list[locale])
-        keyboard = API.inline_keyboard(buttons)
+            title = select.bot_message(
+                "current_language", locale
+            ).format(locale_list[locale])
 
         API.edit_message(
             self.user_id, self.message_id, title,
-            keyboard=keyboard, parse_mode="MarkdownV2"
+            keyboard=API.inline_keyboard(buttons), parse_mode="MarkdownV2"
         )
         API.answer_callback_query(self.callback_id)

@@ -1,9 +1,5 @@
 """
     Module with additional tools for working with a bot.
-
-Attributes:
-    ButtonTemplate (Tuple[str, str]): Variable defining the type of
-        button template.
 """
 
 import re
@@ -11,9 +7,7 @@ import random
 import string
 from math import ceil
 from typing import Any
-from typing import Dict
-from typing import List
-from typing import Tuple
+from typing import Union
 from typing import Optional
 import requests
 
@@ -23,7 +17,8 @@ from .database import Insert
 from .database import Update
 
 
-ButtonTemplate = Tuple[str, str]
+# Variable defining the type of button template.
+ButtonTemplate = tuple[str, str]
 
 
 # pylint: disable=unsubscriptable-object
@@ -116,8 +111,8 @@ class API:
 
     @staticmethod
     def inline_keyboard(
-        button_data_list: Tuple[Tuple[ButtonTemplate], ...]
-    ) -> Dict[str, Any]:
+        button_data_list: tuple[tuple[ButtonTemplate], ...]
+    ) -> dict[str, Any]:
         """Create an inline keyboard wrapper.
 
         Args:
@@ -165,11 +160,12 @@ class Tools:
         return bool(user_existence)
 
     @staticmethod
-    def add_new_user(message: Dict[str, Any]) -> None:
+    def add_new_user(message: dict[str, Any]) -> None:
         """Insert new user to database.
 
         Args:
-            message: An object containing all information about the user.
+            message: An object containing all information
+                about the user's message.
         """
 
         user_id = message["chat"]["id"]
@@ -186,8 +182,8 @@ class Tools:
 
         Args:
             locale: A variable defining the user's language and
-                any special preferences that
-                the user wants to see in their user interface.
+                any special preferences that the user wants to see in
+                their user interface.
 
         Returns:
             Locale for success, "en" otherwise.
@@ -197,7 +193,7 @@ class Tools:
         return locale if locale in locales else "en"
 
     @staticmethod
-    def define_session(data: str) -> List[str]:
+    def define_session(data: str) -> list[str]:
         """Get all session details.
 
         Args:
@@ -211,7 +207,7 @@ class Tools:
         return session
 
     @staticmethod
-    def get_session(user_id: int) -> str:
+    def get_session(user_id: int) -> Union[str, None]:
         """Get current user session.
 
         Args:
@@ -239,9 +235,8 @@ class Tools:
             data: Data associated with the callback button.
             name: Button name.
             locale: A variable defining the user's language and
-                any special preferences that
-                the user wants to see in their user interface.
-                Defaults to "en".
+                any special preferences that the user wants to see in
+                their user interface. Defaults to "en".
 
         Returns:
             ButtonTemplate: Identified button template.
@@ -313,6 +308,7 @@ class Tools:
         Returns:
             card_key: Unique identifier for the card.
         """
+
         first_part = random.randrange(1000, 10000)
         second_part = random.randrange(1000, 10000)
         third_part = random.choice(string.ascii_letters)
@@ -322,11 +318,11 @@ class Tools:
 
     @staticmethod
     def button_list_creator(
-        list_of_items: List[Any],
+        list_of_items: list[Any],
         header: str,
         data: str,
         buttons_in_layer: Optional[int] = 2
-    ) -> List[List[str, str]]:
+    ) -> list[list[str, str]]:
         """Create a list of buttons for specific items.
 
         Args:
@@ -351,8 +347,8 @@ class Tools:
             right_border = buttons_in_layer*(layer+1)
 
             for item in list_of_items[left_border:right_border]:
-                data = f"{header}/{data}/{item[2]}"
                 name = item[3]
+                data = f"{header}/{data}/{item[2]}"
                 button_data = [name, data]
 
                 buttons[layer].append(button_data)
@@ -365,7 +361,7 @@ class Tools:
         level: Optional[int] = 0,
         items_in_page: Optional[int] = 8,
         number_of_navigation_buttons: Optional[int] = 5
-    ) -> List[List[str, str]]:
+    ) -> list[list[str, str]]:
         """Creating menu navigation.
 
         Args:
