@@ -70,7 +70,61 @@ class Card:
         """Card-related user actions handler.
         """
 
-        pass
+        if self.session_data == "info":
+            self.info()
+
+    def info(self) -> None:
+        """Card Information menu.
+        """
+
+        with Select("bot_users") as select:
+            locale = select.user_attribute(self.user_id, "locale")
+
+        buttons = (
+            (
+                Tools.identified_button_template(
+                    header="CaRSe",
+                    data="edit_name",
+                    name=f"edit_name/{self.key}/{self.card_key}",
+                    locale=locale
+                ),
+                Tools.identified_button_template(
+                    header="CaRSe",
+                    data="edit_description",
+                    name=f"edit_description/{self.key}/{self.card_key}",
+                    locale=locale
+                )
+            ),
+            (
+                Tools.identified_button_template(
+                    header="MnSe", data="main",
+                    name=f"private_office/{self.key}", locale=locale
+                ),
+                Tools.identified_button_template(
+                    header="CoLSe", data="back",
+                    name=f"info/{self.key}", locale=locale
+                )
+            )
+        )
+
+        with Select("bot_collections") as select:
+            name = select.card_attribute(
+                self.user_id, self.key, self.card_key, "name"
+            )
+            description = select.card_attribute(
+                self.user_id, self.key, self.card_key, "description"
+            )
+
+        with Select("bot_messages") as select:
+            title = select.bot_message(
+                "description_info", locale
+            ).format(name, description)
+
+        API.edit_message(
+            self.user_id, self.message_id, title,
+            keyboard=API.inline_keyboard(buttons), parse_mode="MarkdownV2"
+        )
+        API.answer_callback_query(self.callback_id)
 
     def _session_initialization(self):
         session = Tools.define_session(self.data)
