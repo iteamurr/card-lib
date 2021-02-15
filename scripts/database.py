@@ -225,7 +225,7 @@ class Insert:
                cards,
                page_level
             ) VALUES (%s, %s, %s, %s, %s, %s);
-            """, (user_id, key, name, None, 0, 0)
+            """, (user_id, key, name, "🚫", 0, 0)
         )
 
     def new_card(
@@ -252,7 +252,7 @@ class Insert:
                name,
                description
             ) VALUES (%s, %s, %s, %s, %s);
-            """, (user_id, key, card_key, name, None)
+            """, (user_id, key, card_key, name, "🚫")
         )
 
 

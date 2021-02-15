@@ -134,7 +134,7 @@ class Collection:
         with Select("bot_messages") as select:
             if description:
                 title = select.bot_message(
-                    "collection_description_info", locale
+                    "description_info", locale
                 ).format(name, description)
             else:
                 title = select.bot_message(
@@ -218,8 +218,8 @@ class Collection:
 
         with Select("bot_messages") as select:
             title = select.bot_message(
-                "collection_description_info", locale
-            ).format(name, "🚫" if not description else description)
+                "description_info", locale
+            ).format(name, description)
 
         API.edit_message(
             self.user_id, self.message_id, title,
@@ -531,8 +531,8 @@ class CollectionSession:
 
         with Select("bot_messages") as select:
             title = select.bot_message(
-                "collection_description_info", locale
-            ).format(name, "🚫" if not description else description)
+                "description_info", locale
+            ).format(name, description)
 
         API.send_message(self.user_id, text)
         API.edit_message(

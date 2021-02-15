@@ -30,6 +30,10 @@ class SettingsPanel:
             ins.new_bot_message("change_language_to_en", "English", "en")
             ins.new_bot_message("change_language_to_ru", "Russian", "en")
 
+            ins.new_bot_message("description_info",
+                                "*Name:* {}\n*Description:* {}",
+                                "en")
+
             # Collection
             ins.new_bot_message("add_collection", "+ Add Collection", "en")
             ins.new_bot_message("create_collection",
@@ -58,9 +62,6 @@ class SettingsPanel:
             ins.new_bot_message("public_key", "Public Key", "en")
 
             # Edit Collection
-            ins.new_bot_message("collection_description_info",
-                                "*Name:* {}\n*Description:* {}",
-                                "en")
             ins.new_bot_message("edit_name", "Edit Name", "en")
             ins.new_bot_message("edit_description", "Edit Description", "en")
             ins.new_bot_message("edit_collection_name",
@@ -127,6 +128,10 @@ class SettingsPanel:
             ins.new_bot_message("change_language_to_en", "Английский", "ru")
             ins.new_bot_message("change_language_to_ru", "Русский", "ru")
 
+            ins.new_bot_message("description_info",
+                                "*Название:* {}\n*Описание:* {}",
+                                "ru")
+
             # Collection
             ins.new_bot_message("add_collection", "+ Добавить Коллекцию", "ru")
             ins.new_bot_message("create_collection",
@@ -155,9 +160,6 @@ class SettingsPanel:
             ins.new_bot_message("public_key", "Публичный Ключ", "ru")
 
             # Edit Collection
-            ins.new_bot_message("collection_description_info",
-                                "*Название:* {}\n*Описание:* {}",
-                                "ru")
             ins.new_bot_message("edit_name", "Изменить Название","ru")
             ins.new_bot_message("edit_description", "Изменить Описание", "ru")
             ins.new_bot_message("edit_collection_name",
