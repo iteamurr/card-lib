@@ -30,6 +30,10 @@ class SettingsPanel:
             ins.new_bot_message("change_language_to_en", "English", "en")
             ins.new_bot_message("change_language_to_ru", "Russian", "en")
 
+            ins.new_bot_message("description_info",
+                                "*Name:* {}\n*Description:* {}",
+                                "en")
+
             # Collection
             ins.new_bot_message("add_collection", "+ Add Collection", "en")
             ins.new_bot_message("create_collection",
@@ -58,9 +62,6 @@ class SettingsPanel:
             ins.new_bot_message("public_key", "Public Key", "en")
 
             # Edit Collection
-            ins.new_bot_message("collection_description_info",
-                                "*Name:* {}\n*Description:* {}",
-                                "en")
             ins.new_bot_message("edit_name", "Edit Name", "en")
             ins.new_bot_message("edit_description", "Edit Description", "en")
             ins.new_bot_message("edit_collection_name",
@@ -97,6 +98,17 @@ class SettingsPanel:
                                 "bring up a new menu",
                                 "en")
 
+            # Card
+            ins.new_bot_message("cards", "Collection '{}' cards:", "en")
+            ins.new_bot_message("add_card", "+ Add Card", "en")
+            ins.new_bot_message("create_card",
+                                "Enter card name:",
+                                "en")
+            ins.new_bot_message("new_card",
+                                "The new card has been created. " \
+                                "You can already customize it:",
+                                "en")
+
     @staticmethod
     def ru_insert_messages():
         """Writing messages in Russian to the bot phrases database.
@@ -115,6 +127,10 @@ class SettingsPanel:
             ins.new_bot_message("current_language", "*Текущий язык:* {}", "ru")
             ins.new_bot_message("change_language_to_en", "Английский", "ru")
             ins.new_bot_message("change_language_to_ru", "Русский", "ru")
+
+            ins.new_bot_message("description_info",
+                                "*Название:* {}\n*Описание:* {}",
+                                "ru")
 
             # Collection
             ins.new_bot_message("add_collection", "+ Добавить Коллекцию", "ru")
@@ -144,9 +160,6 @@ class SettingsPanel:
             ins.new_bot_message("public_key", "Публичный Ключ", "ru")
 
             # Edit Collection
-            ins.new_bot_message("collection_description_info",
-                                "*Название:* {}\n*Описание:* {}",
-                                "ru")
             ins.new_bot_message("edit_name", "Изменить Название","ru")
             ins.new_bot_message("edit_description", "Изменить Описание", "ru")
             ins.new_bot_message("edit_collection_name",
@@ -179,4 +192,15 @@ class SettingsPanel:
             ins.new_bot_message("does_not_exist",
                                 "Коллекции больше не существует, " \
                                 "вызовите новое меню",
+                                "ru")
+
+            # Card
+            ins.new_bot_message("cards", "Карты коллекции «{}»:", "ru")
+            ins.new_bot_message("add_card", "+ Добавить карту", "en")
+            ins.new_bot_message("create_card",
+                                "Введите название карты:",
+                                "ru")
+            ins.new_bot_message("new_card",
+                                "Новая карта создана. " \
+                                "Вы уже можете настроить ее:",
                                 "ru")
