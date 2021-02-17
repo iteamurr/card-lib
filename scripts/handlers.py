@@ -4,14 +4,14 @@
 
 from typing import Any
 
-from bot.menu import SendMenu
-from bot.menu import SwitchMenu
-from bot.collection import Collection
-from bot.collection import Collections
-from bot.collection import CollectionSession
-from bot.card import Card
-from bot.card import Cards
-from bot.card import CardSession
+from .bot.menu import SendMenu
+from .bot.menu import SwitchMenu
+from .bot.collection import Collection
+from .bot.collection import Collections
+from .bot.collection import CollectionSession
+from .bot.card import Card
+from .bot.card import Cards
+from .bot.card import CardSession
 
 from .tools import Tools
 
