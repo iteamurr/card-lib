@@ -33,7 +33,7 @@ class SendMenu:
                     header="MnSe", data="settings",
                     name="settings", locale=locale
                 )
-            )
+            ),
         )
 
         with Select("bot_messages") as select:
@@ -56,13 +56,13 @@ class SendMenu:
                 Tools.identified_button_template(
                     header="MnSe", data="locale_settings",
                     name="locale_settings", locale=locale
-                )
+                ),
             ),
             (
                 Tools.identified_button_template(
-                    header="MnSe", data="back",
-                    name="private_office", locale=locale
-                )
+                    header="MnSe", data="private_office",
+                    name="back", locale=locale
+                ),
             )
         )
 
@@ -101,7 +101,7 @@ class SwitchMenu:
                     header="MnSe", data="settings",
                     name="settings", locale=locale
                 )
-            )
+            ),
         )
 
         with Select("bot_messages") as select:
@@ -125,13 +125,13 @@ class SwitchMenu:
                 Tools.identified_button_template(
                     header="MnSe", data="locale_settings",
                     name="locale_settings", locale=locale
-                )
+                ),
             ),
             (
                 Tools.identified_button_template(
-                    header="MnSe", data="back",
-                    name="private_office", locale=locale
-                )
+                    header="MnSe", data="private_office",
+                    name="back", locale=locale
+                ),
             )
         )
 
@@ -155,22 +155,22 @@ class SwitchMenu:
         buttons = (
             (
                 Tools.identified_button_template(
-                    header="MnSe", data="change_language_to_en",
-                    name="en_locale", locale=locale
+                    header="MnSe", data="en_locale",
+                    name="change_language_to_en", locale=locale
                 ),
                 Tools.identified_button_template(
-                    header="MnSe", data="change_language_to_ru",
-                    name="ru_locale", locale=locale
+                    header="MnSe", data="ru_locale",
+                    name="change_language_to_ru", locale=locale
                 )
             ),
             (
                 Tools.identified_button_template(
-                    header="MnSe", data="main",
-                    name="private_office", locale=locale
+                    header="MnSe", data="private_office",
+                    name="main", locale=locale
                 ),
                 Tools.identified_button_template(
-                    header="MnSe", data="back",
-                    name="settings", locale=locale
+                    header="MnSe", data="settings",
+                    name="back", locale=locale
                 )
             )
         )
