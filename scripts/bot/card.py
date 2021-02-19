@@ -179,7 +179,7 @@ class Cards:
                     header="CoLSe", data="back",
                     name=f"info/{self.key}", locale=locale
                 )
-            )
+            ),
         )
 
         with Select("bot_collections") as select:
@@ -269,8 +269,8 @@ class CardSession:
                     header="CaRSe",
                     data=f"info/{self.key}/{self.card_key}",
                     name=self.message_text
-                )
-            )
+                ),
+            ),
         )
 
         with Select("bot_collections") as select:
