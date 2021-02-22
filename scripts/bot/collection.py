@@ -12,19 +12,22 @@ from ..database import Select
 from ..database import Insert
 from ..database import Update
 from ..database import Delete
+from ..shortcuts import CollectionTemplates
 
-# pylint: disable=unsubscriptable-object
+
 def existence_check(func: Callable) -> Callable:
     """Decorator that checks if a collection exists in the database.
     """
 
     def wrapper_func(self, *args, **kwargs):
         with Select("bot_collections") as select:
-            name = bool(
-                select.collection_attribute(self.user_id, self.key, "name")
+            collection_exists = bool(
+                select.collection_attribute(
+                    self.user_id, self.key, "name"
+                )
             )
 
-        if name:
+        if collection_exists:
             func(self, *args, **kwargs)
         else:
             with Select("bot_users") as select:
@@ -34,13 +37,13 @@ def existence_check(func: Callable) -> Callable:
                 title = select.bot_message("does_not_exist", locale)
 
             API.answer_callback_query(
-                self.callback_id,
-                text=title, show_alert=True
+                self.callback_id, text=title, show_alert=True
             )
             return
     return wrapper_func
 
 
+# pylint: disable=unsubscriptable-object
 class Collection:
     """Class defining the collection object.
 
@@ -92,39 +95,6 @@ class Collection:
         with Select("bot_users") as select:
             locale = select.user_attribute(self.user_id, "locale")
 
-        buttons = (
-            (
-                Tools.identified_button_template(
-                    header="CoLSe", data="collection_learning",
-                    name=f"collection_learning/{self.key}", locale=locale
-                ),
-                Tools.identified_button_template(
-                    header="CaRsSe", data="collection_cards",
-                    name=f"collection_cards/{self.key}", locale=locale
-                )
-            ),
-            (
-                Tools.identified_button_template(
-                    header="CoLSe", data="public_key",
-                    name=f"public_key/{self.key}", locale=locale
-                ),
-                Tools.identified_button_template(
-                    header="CoLSe", data="settings",
-                    name=f"edit_collection/{self.key}", locale=locale
-                ),
-            ),
-            (
-                Tools.identified_button_template(
-                    header="MnSe", data="main",
-                    name="private_office", locale=locale
-                ),
-                Tools.identified_button_template(
-                    header="CoLsSe", data="back",
-                    name="collections", locale=locale
-                ),
-            )
-        )
-
         with Select("bot_collections") as select:
             name = select.collection_attribute(self.user_id, self.key, "name")
             description = select.collection_attribute(
@@ -141,9 +111,10 @@ class Collection:
                     "collection_info", locale
                 ).format(name)
 
+        menu = CollectionTemplates.info_template(locale, self.key)
         API.edit_message(
             self.user_id, self.message_id, title,
-            keyboard=API.inline_keyboard(buttons), parse_mode="MarkdownV2"
+            keyboard=API.inline_keyboard(menu), parse_mode="MarkdownV2"
         )
         API.answer_callback_query(self.callback_id)
 
@@ -154,23 +125,15 @@ class Collection:
         with Select("bot_users") as select:
             locale = select.user_attribute(self.user_id, "locale")
 
-        buttons = (
-            (
-                Tools.identified_button_template(
-                    header="CoLSe", data="back",
-                    name=f"info/{self.key}", locale=locale
-                )
-            )
-        )
-
         with Select("bot_messages") as select:
             title = select.bot_message(
                 "public_key_text", locale
             ).format(self.key)
 
+        menu = CollectionTemplates.public_key_template(locale, self.key)
         API.edit_message(
             self.user_id, self.message_id, title,
-            keyboard=API.inline_keyboard(buttons), parse_mode="MarkdownV2"
+            keyboard=API.inline_keyboard(menu), parse_mode="MarkdownV2"
         )
         API.answer_callback_query(self.callback_id)
 
@@ -180,35 +143,6 @@ class Collection:
 
         with Select("bot_users") as select:
             locale = select.user_attribute(self.user_id, "locale")
-
-        buttons = (
-            (
-                Tools.identified_button_template(
-                    header="CoLSe", data="edit_name",
-                    name=f"edit_name/{self.key}", locale=locale
-                ),
-                Tools.identified_button_template(
-                    header="CoLSe", data="edit_description",
-                    name=f"edit_description/{self.key}", locale=locale
-                )
-            ),
-            (
-                Tools.identified_button_template(
-                    header="CoLSe", data="delete_collection",
-                    name=f"delete_collection/{self.key}", locale=locale
-                )
-            ),
-            (
-                Tools.identified_button_template(
-                    header="MnSe", data="main",
-                    name=f"private_office/{self.key}", locale=locale
-                ),
-                Tools.identified_button_template(
-                    header="CoLSe", data="back",
-                    name=f"info/{self.key}", locale=locale
-                )
-            )
-        )
 
         with Select("bot_collections") as select:
             name = select.collection_attribute(self.user_id, self.key, "name")
@@ -221,9 +155,10 @@ class Collection:
                 "description_info", locale
             ).format(name, description)
 
+        menu = CollectionTemplates.edit_menu_template(locale, self.key)
         API.edit_message(
             self.user_id, self.message_id, title,
-            keyboard=API.inline_keyboard(buttons), parse_mode="MarkdownV2"
+            keyboard=API.inline_keyboard(menu), parse_mode="MarkdownV2"
         )
         API.answer_callback_query(self.callback_id)
 
@@ -234,25 +169,13 @@ class Collection:
         with Select("bot_users") as select:
             locale = select.user_attribute(self.user_id, "locale")
 
-        buttons = (
-            (
-                Tools.identified_button_template(
-                    header="CoLSe", data="confirm_deletion",
-                    name=f"confirm_delete/{self.key}", locale=locale
-                ),
-                Tools.identified_button_template(
-                    header="CoLSe", data="undo_delete",
-                    name=f"edit_collection/{self.key}", locale=locale
-                )
-            )
-        )
-
         with Select("bot_messages") as select:
             title = select.bot_message("delete_confirmation", locale)
 
+        menu = CollectionTemplates.delete_menu_template(locale, self.key)
         API.edit_message(
             self.user_id, self.message_id, title,
-            keyboard=API.inline_keyboard(buttons)
+            keyboard=API.inline_keyboard(menu)
         )
         API.answer_callback_query(self.callback_id)
 
@@ -263,15 +186,6 @@ class Collection:
         with Select("bot_users") as select:
             locale = select.user_attribute(self.user_id, "locale")
             collections = select.user_attribute(self.user_id, "collections")
-
-        buttons = (
-            (
-                Tools.identified_button_template(
-                    header="CoLsSe", data="collections",
-                    name="collections", locale=locale
-                )
-            )
-        )
 
         with Delete("bot_collections") as delete:
             delete.collection(self.user_id, self.key)
@@ -284,9 +198,10 @@ class Collection:
         with Select("bot_messages") as select:
             title = select.bot_message("collection_deleted", locale)
 
+        menu = CollectionTemplates.delete_confirmation_template(locale)
         API.edit_message(
             self.user_id, self.message_id, title,
-            keyboard=API.inline_keyboard(buttons)
+            keyboard=API.inline_keyboard(menu)
         )
         API.answer_callback_query(self.callback_id)
 
@@ -332,38 +247,25 @@ class Collections:
         """Collections-related user actions handler.
         """
 
-        if self.data == "collections":
+        if self.session_data == "collections":
             self.collections()
 
-        elif self.data == "add_collection":
+        elif self.session_data == "add_collection":
             self.add_collection_session()
 
         else:
             self._undefined_menu()
 
-    def collections(self, collections_in_page: Optional[int] = 8) -> None:
+    def collections(self, per_page: Optional[int] = 8) -> None:
         """Show all user collections.
 
         Args:
-            collections_in_page: Number of collections per page.
+            per_page: Number of collections per page.
         """
 
         with Select("bot_users") as select:
             locale = select.user_attribute(self.user_id, "locale")
             level = select.user_attribute(self.user_id, "page_level")
-
-        buttons = (
-            (
-                Tools.identified_button_template(
-                    header="CoLsSe", data="add_collection",
-                    name="add_collection", locale=locale
-                ),
-                Tools.identified_button_template(
-                    header="MnSe", data="back",
-                    name="private_office", locale=locale
-                )
-            )
-        )
 
         with Select("bot_messages") as select:
             title = select.bot_message("collections", locale)
@@ -371,19 +273,15 @@ class Collections:
         with Select("bot_collections") as select:
             collections_list = select.user_collections(self.user_id)
 
+        items = collections_list[per_page*level:per_page*(level + 1)]
         navigation = Tools.navigation_creator(len(collections_list), level)
+        collection_buttons = Tools.button_list_creator(items, "CoLSe", "info")
+        buttons = CollectionTemplates.collections_template(locale)
+        menu = (navigation + collection_buttons + buttons)
 
-        bord = slice(collections_in_page*level,
-                     collections_in_page*(level + 1))
-        collection_buttons = Tools.button_list_creator(
-            list_of_items=collections_list[bord],
-            header="CoLSe", data="info"
-        )
-
-        all_buttons = (navigation + collection_buttons + buttons)
         API.edit_message(
             self.user_id, self.message_id, title,
-            keyboard=API.inline_keyboard(all_buttons)
+            keyboard=API.inline_keyboard(menu)
         )
         API.answer_callback_query(self.callback_id)
 
@@ -445,15 +343,6 @@ class CollectionSession:
             locale = select.user_attribute(self.user_id, "locale")
             collections = select.user_attribute(self.user_id, "collections")
 
-        buttons = (
-            (
-                Tools.button_template(
-                    header="CoLSe",
-                    data=f"info/{self.key}", name=self.message_text
-                )
-            )
-        )
-
         with Select("bot_messages") as select:
             text = select.bot_message("new_collection", locale)
 
@@ -466,48 +355,22 @@ class CollectionSession:
                 self.user_id, "collections", collections + 1
             )
 
+        menu = CollectionTemplates.new_collection_template(
+            self.key, self.message_text
+        )
         API.send_message(
-            self.user_id, text,
-            keyboard=API.inline_keyboard(buttons)
+            self.user_id, text, keyboard=API.inline_keyboard(menu)
         )
 
     def change_collection_attribute(self) -> None:
         """Change any attribute of the collection.
         """
 
+        attribute = self.session_data.split("_")[1]
+
         with Select("bot_users") as select:
             locale = select.user_attribute(self.user_id, "locale")
             menu_id = select.user_attribute(self.user_id, "menu_id")
-
-        attribute = self.session_data.split("_")[1]
-        buttons = (
-            (
-                Tools.identified_button_template(
-                    header="CoLSe", data="edit_name",
-                    name=f"edit_name/{self.key}", locale=locale
-                ),
-                Tools.identified_button_template(
-                    header="CoLSe", data="edit_description",
-                    name=f"edit_description/{self.key}", locale=locale
-                )
-            ),
-            (
-                Tools.identified_button_template(
-                    header="CoLSe", data="delete_collection",
-                    name=f"delete_collection/{self.key}", locale=locale
-                )
-            ),
-            (
-                Tools.identified_button_template(
-                    header="MnSe", data="main",
-                    name=f"private_office/{self.key}", locale=locale
-                ),
-                Tools.identified_button_template(
-                    header="CoLSe", data="back",
-                    name=f"info/{self.key}", locale=locale
-                )
-            )
-        )
 
         with Update("bot_collections") as update:
             update.collection_attribute(
@@ -519,8 +382,7 @@ class CollectionSession:
 
         with Select("bot_messages") as select:
             text = select.bot_message(
-                f"collection_{attribute}_changed",
-                locale
+                f"collection_{attribute}_changed", locale
             )
 
         with Select("bot_collections") as select:
@@ -534,10 +396,11 @@ class CollectionSession:
                 "description_info", locale
             ).format(name, description)
 
+        menu = CollectionTemplates.edit_menu_template(locale, self.key)
         API.send_message(self.user_id, text)
         API.edit_message(
             self.user_id, menu_id, title,
-            keyboard=API.inline_keyboard(buttons), parse_mode="MarkdownV2"
+            keyboard=API.inline_keyboard(menu), parse_mode="MarkdownV2"
         )
 
     def _session_initialization(self):

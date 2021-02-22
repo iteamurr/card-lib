@@ -11,6 +11,7 @@ from ..tools import Tools
 from ..database import Select
 from ..database import Insert
 from ..database import Update
+from ..shortcuts import CardTemplates
 
 
 def existence_check(func: Callable) -> Callable:
@@ -80,33 +81,6 @@ class Card:
         with Select("bot_users") as select:
             locale = select.user_attribute(self.user_id, "locale")
 
-        buttons = (
-            (
-                Tools.identified_button_template(
-                    header="CaRSe",
-                    data="edit_name",
-                    name=f"edit_name/{self.key}/{self.card_key}",
-                    locale=locale
-                ),
-                Tools.identified_button_template(
-                    header="CaRSe",
-                    data="edit_description",
-                    name=f"edit_description/{self.key}/{self.card_key}",
-                    locale=locale
-                )
-            ),
-            (
-                Tools.identified_button_template(
-                    header="MnSe", data="main",
-                    name=f"private_office/{self.key}", locale=locale
-                ),
-                Tools.identified_button_template(
-                    header="CoLSe", data="back",
-                    name=f"info/{self.key}", locale=locale
-                )
-            )
-        )
-
         with Select("bot_collections") as select:
             name = select.card_attribute(
                 self.user_id, self.key, self.card_key, "name"
@@ -120,9 +94,10 @@ class Card:
                 "description_info", locale
             ).format(name, description)
 
+        menu = CardTemplates.info_template(locale, self.key, self.card_key)
         API.edit_message(
             self.user_id, self.message_id, title,
-            keyboard=API.inline_keyboard(buttons), parse_mode="MarkdownV2"
+            keyboard=API.inline_keyboard(menu), parse_mode="MarkdownV2"
         )
         API.answer_callback_query(self.callback_id)
 
@@ -156,31 +131,19 @@ class Cards:
 
         if self.session_data == "collection_cards":
             self.cards()
+
         elif self.session_data == "add_card":
             self.add_card_session()
 
-    def cards(self, cards_in_page: Optional[int] = 8) -> None:
+    def cards(self, per_page: Optional[int] = 8) -> None:
         """Show all user cards.
 
         Args:
-            cards_in_page: Number of cards per page.
+            per_page: Number of cards per page.
         """
 
         with Select("bot_users") as select:
             locale = select.user_attribute(self.user_id, "locale")
-
-        buttons = (
-            (
-                Tools.identified_button_template(
-                    header="CaRsSe", data="add_card",
-                    name=f"add_card/{self.key}", locale=locale
-                ),
-                Tools.identified_button_template(
-                    header="CoLSe", data="back",
-                    name=f"info/{self.key}", locale=locale
-                )
-            ),
-        )
 
         with Select("bot_collections") as select:
             level = select.collection_attribute(
@@ -197,16 +160,14 @@ class Cards:
             ).format(collection_name)
 
         navigation = Tools.navigation_creator(len(cards_list), level)
+        items = cards_list[per_page*level:per_page*(level + 1)]
+        card_buttons = Tools.button_list_creator(items, "CoLSe", "info")
+        buttons = CardTemplates.cards_template(locale, self.key)
+        menu = (navigation + card_buttons + buttons)
 
-        bord = slice(cards_in_page*level, cards_in_page*(level + 1))
-        card_buttons = Tools.button_list_creator(
-            list_of_items=cards_list[bord], header="CoLSe", data="info"
-        )
-
-        all_buttons = (navigation + card_buttons + buttons)
         API.edit_message(
             self.user_id, self.message_id, title,
-            keyboard=API.inline_keyboard(all_buttons)
+            keyboard=API.inline_keyboard(menu)
         )
         API.answer_callback_query(self.callback_id)
 
@@ -263,16 +224,6 @@ class CardSession:
             locale = select.user_attribute(self.user_id, "locale")
             cards = select.user_attribute(self.user_id, "cards")
 
-        buttons = (
-            (
-                Tools.button_template(
-                    header="CaRSe",
-                    data=f"info/{self.key}/{self.card_key}",
-                    name=self.message_text
-                ),
-            ),
-        )
-
         with Select("bot_collections") as select:
             collection_cards = select.collection_attribute(
                 self.user_id, self.key, "cards"
@@ -295,9 +246,11 @@ class CardSession:
                 self.user_id, self.key, "cards", collection_cards + 1
             )
 
+        menu = CardTemplates.new_card_template(
+            self.key, self.card_key, self.message_text
+        )
         API.send_message(
-            self.user_id, text,
-            keyboard=API.inline_keyboard(buttons)
+            self.user_id, text, keyboard=API.inline_keyboard(menu)
         )
 
     def _session_initialization(self):
