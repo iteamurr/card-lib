@@ -18,7 +18,13 @@ from .database import Update
 
 
 # Variable defining the type of button template.
-ButtonTemplate = tuple[str, str]
+ButtonTemplate = list[str, str]
+
+# Variable defining the type of layer template.
+LayerTemplate = list[ButtonTemplate, ...]
+
+# Variable defining the type of menu template.
+MenuTemplate = list[LayerTemplate, ...]
 
 
 # pylint: disable=unsubscriptable-object
@@ -30,7 +36,7 @@ class API:
     def send_message(
         chat_id: int,
         text: str,
-        keyboard: Optional[dict] = None,
+        keyboard: Optional[dict[str, Any]] = None,
         parse_mode: Optional[str] = None
     ) -> None:
         """Send a text message with additional options.
@@ -49,7 +55,8 @@ class API:
 
         if parse_mode:
             body["parse_mode"] = parse_mode
-        elif keyboard:
+
+        if keyboard:
             body = {**body, **keyboard}
 
         requests.post(url, json=body)
@@ -59,7 +66,7 @@ class API:
         chat_id: int,
         message_id: int,
         text: str,
-        keyboard: Optional[dict] = None,
+        keyboard: Optional[dict[str, Any]] = None,
         parse_mode: Optional[str] = None
     ) -> None:
         """Edit bot message, to change the message text or the current menu.
@@ -79,7 +86,8 @@ class API:
 
         if parse_mode:
             body["parse_mode"] = parse_mode
-        elif keyboard:
+
+        if keyboard:
             body = {**body, **keyboard}
 
         requests.post(url, json=body)
@@ -111,12 +119,12 @@ class API:
 
     @staticmethod
     def inline_keyboard(
-        button_data_list: tuple[tuple[ButtonTemplate], ...]
+        menu_template: MenuTemplate[LayerTemplate[ButtonTemplate, ...], ...]
     ) -> dict[str, Any]:
         """Create an inline keyboard wrapper.
 
         Args:
-            button_data_list: Button of an inline keyboard.
+            menu_template: Button of an inline keyboard.
 
         Returns:
             keyboard: Inline keyboard wrapper.
@@ -130,7 +138,7 @@ class API:
         }
 
         inline_keyboard = keyboard["reply_markup"]["inline_keyboard"]
-        for index, button_data in enumerate(button_data_list):
+        for index, button_data in enumerate(menu_template):
             inline_keyboard.append([])
 
             for button_text, callback_data in button_data:
@@ -239,13 +247,14 @@ class Tools:
                 their user interface. Defaults to "en".
 
         Returns:
-            ButtonTemplate: Identified button template.
+            template: Identified button template.
         """
 
         with Select("bot_messages") as select:
             identified_name = select.bot_message(name, locale)
 
-        return (f"{identified_name}", f"{header}/{data}")
+        template = [f"{identified_name}", f"{header}/{data}"]
+        return template
 
     @staticmethod
     def button_template(header: str, data: str, name: str) -> ButtonTemplate:
@@ -257,10 +266,40 @@ class Tools:
             name: Button name.
 
         Returns:
-            ButtonTemplate: Identified button template.
+            template: Identified button template.
         """
 
-        return (f"{name}", f"{header}/{data}")
+        template = [f"{name}", f"{header}/{data}"]
+        return template
+
+    @staticmethod
+    def layer_template(*button_templates: ButtonTemplate) -> LayerTemplate:
+        """Create button layer.
+
+        Args:
+            *button_templates: The buttons from which
+                the layer will be created.
+
+        Returns:
+            layer: Layer containing buttons.
+        """
+
+        layer = [*button_templates]
+        return layer
+
+    @staticmethod
+    def menu_template(*layers: LayerTemplate) -> MenuTemplate:
+        """Create menu from layers.
+
+        Args:
+            *layers: Layers from which the menu will be created.
+
+        Returns:
+            menu: Menu containing layers.
+        """
+
+        menu = [*layers]
+        return menu
 
     @staticmethod
     def change_locale(user_id: int, data: str) -> None:
@@ -322,7 +361,7 @@ class Tools:
         header: str,
         data: str,
         buttons_in_layer: Optional[int] = 2
-    ) -> list[list[str, str]]:
+    ) -> LayerTemplate[ButtonTemplate, ...]:
         """Create a list of buttons for specific items.
 
         Args:
@@ -361,7 +400,7 @@ class Tools:
         level: Optional[int] = 0,
         items_in_page: Optional[int] = 8,
         number_of_navigation_buttons: Optional[int] = 5
-    ) -> list[list[str, str]]:
+    ) -> LayerTemplate[ButtonTemplate, ...]:
         """Creating menu navigation.
 
         Args:
