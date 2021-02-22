@@ -433,7 +433,7 @@ class Select:
         self,
         user_id: int,
         key: str
-    ) -> Union(list[tuple[str, ...], ...], None):
+    ) -> Union[list[tuple[str, ...], ...], None]:
         """Get user collection cards.
 
         Args:
