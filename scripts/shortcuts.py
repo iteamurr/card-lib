@@ -27,33 +27,33 @@ class CollectionTemplates:
         template = Tools.menu_template(
             Tools.layer_template(
                 Tools.identified_button_template(
-                    header="CoLSe", data="collection_learning",
-                    name=f"collection_learning/{key}", locale=locale
+                    header="CoLSe", data=f"collection_learning/{key}",
+                    name="collection_learning", locale=locale
                 ),
                 Tools.identified_button_template(
-                    header="CaRsSe", data="collection_cards",
-                    name=f"collection_cards/{key}", locale=locale
+                    header="CaRsSe", data=f"collection_cards/{key}",
+                    name="collection_cards", locale=locale
                 )
             ),
             Tools.layer_template(
                 Tools.identified_button_template(
-                    header="CoLSe", data="public_key",
-                    name=f"public_key/{key}", locale=locale
+                    header="CoLSe", data=f"public_key/{key}",
+                    name="public_key", locale=locale
                 ),
                 Tools.identified_button_template(
-                    header="CoLSe", data="settings",
-                    name=f"edit_collection/{key}", locale=locale
-                ),
+                    header="CoLSe", data=f"edit_collection/{key}",
+                    name="settings", locale=locale
+                )
             ),
             Tools.layer_template(
                 Tools.identified_button_template(
-                    header="MnSe", data="main",
-                    name="private_office", locale=locale
+                    header="MnSe", data="private_office",
+                    name="main", locale=locale
                 ),
                 Tools.identified_button_template(
-                    header="CoLsSe", data="back",
-                    name="collections", locale=locale
-                ),
+                    header="CoLsSe", data="collections",
+                    name="back", locale=locale
+                )
             )
         )
 
@@ -88,6 +88,28 @@ class CollectionTemplates:
         return template
 
     @staticmethod
+    def new_collection_template(key: str, name: str) -> MenuTemplate:
+        """New Collection message template.
+
+        Args:
+            key: Unique identifier for the collection.
+            name: Collection name.
+
+        Returns:
+            template: New Collection message template.
+        """
+
+        template = Tools.menu_template(
+            Tools.layer_template(
+                Tools.button_template(
+                    header="CoLSe", data=f"info/{key}", name=name
+                )
+            )
+        )
+
+        return template
+
+    @staticmethod
     def public_key_template(locale: str, key: str) -> MenuTemplate:
         """Public Key menu template.
 
@@ -104,8 +126,8 @@ class CollectionTemplates:
         template = Tools.menu_template(
             Tools.layer_template(
                 Tools.identified_button_template(
-                    header="CoLSe", data="back",
-                    name=f"info/{key}", locale=locale
+                    header="CoLSe", data=f"info/{key}",
+                    name="back", locale=locale
                 )
             )
         )
@@ -129,28 +151,28 @@ class CollectionTemplates:
         template = Tools.menu_template(
             Tools.layer_template(
                 Tools.identified_button_template(
-                    header="CoLSe", data="edit_name",
-                    name=f"edit_name/{key}", locale=locale
+                    header="CoLSe", data=f"edit_name/{key}",
+                    name="edit_name", locale=locale
                 ),
                 Tools.identified_button_template(
-                    header="CoLSe", data="edit_description",
-                    name=f"edit_description/{key}", locale=locale
+                    header="CoLSe", data=f"edit_desc/{key}",
+                    name="edit_description", locale=locale
                 )
             ),
             Tools.layer_template(
                 Tools.identified_button_template(
-                    header="CoLSe", data="delete_collection",
-                    name=f"delete_collection/{key}", locale=locale
+                    header="CoLSe", data=f"delete_collection/{key}",
+                    name="delete_collection", locale=locale
                 )
             ),
             Tools.layer_template(
                 Tools.identified_button_template(
-                    header="MnSe", data="main",
-                    name=f"private_office/{key}", locale=locale
+                    header="MnSe", data=f"private_office/{key}",
+                    name="main", locale=locale
                 ),
                 Tools.identified_button_template(
-                    header="CoLSe", data="back",
-                    name=f"info/{key}", locale=locale
+                    header="CoLSe", data=f"info/{key}",
+                    name="back", locale=locale
                 )
             )
         )
@@ -174,12 +196,12 @@ class CollectionTemplates:
         template = Tools.menu_template(
             Tools.layer_template(
                 Tools.identified_button_template(
-                    header="CoLSe", data="confirm_deletion",
-                    name=f"confirm_delete/{key}", locale=locale
+                    header="CoLSe", data=f"confirm_delete/{key}",
+                    name="confirm_deletion", locale=locale
                 ),
                 Tools.identified_button_template(
-                    header="CoLSe", data="undo_delete",
-                    name=f"edit_collection/{key}", locale=locale
+                    header="CoLSe", data=f"edit_collection/{key}",
+                    name="undo_delete", locale=locale
                 )
             )
         )
@@ -210,28 +232,6 @@ class CollectionTemplates:
 
         return template
 
-    @staticmethod
-    def new_collection_template(key: str, name: str) -> MenuTemplate:
-        """New Collection message template.
-
-        Args:
-            key: Unique identifier for the collection.
-            name: Collection name.
-
-        Returns:
-            template: New Collection message template.
-        """
-
-        template = Tools.menu_template(
-            Tools.layer_template(
-                Tools.button_template(
-                    header="CoLSe", data=f"info/{key}", name=name
-                )
-            )
-        )
-
-        return template
-
 
 class CardTemplates:
     """Card menu templates.
@@ -255,22 +255,22 @@ class CardTemplates:
         template = Tools.menu_template(
             Tools.layer_template(
                 Tools.identified_button_template(
-                    header="CaRSe", data="edit_name",
-                    name=f"edit_name/{key}/{card_key}", locale=locale
+                    header="CaRSe", data=f"edit_name/{key}/{card_key}",
+                    name="edit_name", locale=locale
                 ),
                 Tools.identified_button_template(
-                    header="CaRSe", data="edit_description",
-                    name=f"edit_description/{key}/{card_key}", locale=locale
+                    header="CaRSe", data=f"edit_desc/{key}/{card_key}",
+                    name="edit_description", locale=locale
                 )
             ),
             Tools.layer_template(
                 Tools.identified_button_template(
-                    header="MnSe", data="main",
-                    name=f"private_office/{key}", locale=locale
+                    header="CoLSe", data=f"info/{key}",
+                    name="return_to_collection", locale=locale
                 ),
                 Tools.identified_button_template(
-                    header="CoLSe", data="back",
-                    name=f"info/{key}", locale=locale
+                    header="CaRsSe", data=f"collection_cards/{key}",
+                    name="back", locale=locale
                 )
             )
         )
@@ -294,12 +294,12 @@ class CardTemplates:
         template = Tools.menu_template(
             Tools.layer_template(
                 Tools.identified_button_template(
-                    header="CaRsSe", data="add_card",
-                    name=f"add_card/{key}", locale=locale
+                    header="CaRsSe", data=f"add_card/{key}",
+                    name="add_card", locale=locale
                 ),
                 Tools.identified_button_template(
-                    header="CoLSe", data="back",
-                    name=f"info/{key}", locale=locale
+                    header="CoLSe", data=f"info/{key}",
+                    name="back", locale=locale
                 )
             )
         )
@@ -323,6 +323,104 @@ class CardTemplates:
             Tools.layer_template(
                 Tools.button_template(
                     header="CaRSe", data=f"info/{key}/{card_key}", name=name
+                )
+            )
+        )
+
+        return template
+
+
+class MenuTemplates:
+    """Main menu templates
+    """
+
+    @staticmethod
+    def private_office_template(locale: str) -> MenuTemplate:
+        """Private Office menu template.
+
+        Args:
+            locale: A variable defining the user's language and
+                    any special preferences that the user wants to see in
+                    their user interface.
+        Returns:
+            template: Private Office menu template.
+        """
+
+        template = Tools.menu_template(
+            Tools.layer_template(
+                Tools.identified_button_template(
+                    header="CoLsSe", data="collections",
+                    name="collections", locale=locale
+                ),
+                Tools.identified_button_template(
+                    header="MnSe", data="settings",
+                    name="settings", locale=locale
+                )
+            )
+        )
+
+        return template
+
+    @staticmethod
+    def settings_template(locale: str) -> MenuTemplate:
+        """Settings menu template.
+
+        Args:
+            locale: A variable defining the user's language and
+                    any special preferences that the user wants to see in
+                    their user interface.
+        Returns:
+            template: Settings menu template.
+        """
+
+        template = Tools.menu_template(
+            Tools.layer_template(
+                Tools.identified_button_template(
+                    header="MnSe", data="locale_settings",
+                    name="locale_settings", locale=locale
+                )
+            ),
+            Tools.layer_template(
+                Tools.identified_button_template(
+                    header="MnSe", data="private_office",
+                    name="back", locale=locale
+                )
+            )
+        )
+
+        return template
+
+    @staticmethod
+    def locale_settings_template(locale: str) -> MenuTemplate:
+        """Locale Settings menu template.
+
+        Args:
+            locale: A variable defining the user's language and
+                    any special preferences that the user wants to see in
+                    their user interface.
+        Returns:
+            template: Locale Settings menu template.
+        """
+
+        template = Tools.menu_template(
+            Tools.layer_template(
+                Tools.identified_button_template(
+                    header="MnSe", data="en_locale",
+                    name="change_language_to_en", locale=locale
+                ),
+                Tools.identified_button_template(
+                    header="MnSe", data="ru_locale",
+                    name="change_language_to_ru", locale=locale
+                )
+            ),
+            Tools.layer_template(
+                Tools.identified_button_template(
+                    header="MnSe", data="private_office",
+                    name="main", locale=locale
+                ),
+                Tools.identified_button_template(
+                    header="MnSe", data="settings",
+                    name="back", locale=locale
                 )
             )
         )
