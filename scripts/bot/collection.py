@@ -72,7 +72,7 @@ class Collection:
             if self.session_data == "edit_name":
                 self._edit_attribute_session("name")
 
-            elif self.session_data == "edit_description":
+            elif self.session_data == "edit_desc":
                 self._edit_attribute_session("description")
 
             else:
@@ -275,7 +275,9 @@ class Collections:
 
         items = collections_list[per_page*level:per_page*(level + 1)]
         navigation = Tools.navigation_creator(len(collections_list), level)
-        collection_buttons = Tools.button_list_creator(items, "CoLSe", "info")
+        collection_buttons = Tools.button_list_creator(
+            "collection", items, "CoLSe", "info"
+        )
         buttons = CollectionTemplates.collections_template(locale)
         menu = (navigation + collection_buttons + buttons)
 

@@ -12,7 +12,6 @@ from .bot.collection import CollectionSession
 from .bot.card import Card
 from .bot.card import Cards
 from .bot.card import CardSession
-
 from .tools import Tools
 
 

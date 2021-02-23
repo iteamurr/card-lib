@@ -19,7 +19,7 @@ def existence_check(func: Callable) -> Callable:
     """
 
     def wrapper_func(self, *args, **kwargs):
-        with Select("bot_cards") as select:
+        with Select("bot_collections") as select:
             card_exists = bool(
                 select.card_attribute(
                     self.user_id, self.key, self.card_key, "name"
@@ -161,7 +161,9 @@ class Cards:
 
         navigation = Tools.navigation_creator(len(cards_list), level)
         items = cards_list[per_page*level:per_page*(level + 1)]
-        card_buttons = Tools.button_list_creator(items, "CoLSe", "info")
+        card_buttons = Tools.button_list_creator(
+            "card", items, "CaRSe", "info"
+        )
         buttons = CardTemplates.cards_template(locale, self.key)
         menu = (navigation + card_buttons + buttons)
 
