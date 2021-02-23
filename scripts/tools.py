@@ -118,9 +118,7 @@ class API:
         requests.post(url, json=body)
 
     @staticmethod
-    def inline_keyboard(
-        menu_template: MenuTemplate[LayerTemplate[ButtonTemplate, ...], ...]
-    ) -> dict[str, Any]:
+    def inline_keyboard(menu_template: MenuTemplate) -> dict[str, Any]:
         """Create an inline keyboard wrapper.
 
         Args:
@@ -337,7 +335,7 @@ class Tools:
         second_part = random.randrange(1000, 10000)
         third_part = random.choice(string.ascii_letters)
 
-        key = f"K-{first_part}-{second_part}-{third_part}-00000-CL"
+        key = f"K-{first_part}-{second_part}-{third_part}-000-CL"
         return key
 
     @staticmethod
@@ -352,19 +350,21 @@ class Tools:
         second_part = random.randrange(1000, 10000)
         third_part = random.choice(string.ascii_letters)
 
-        card_key = f"K-{first_part}-{second_part}-{third_part}-00000-CR"
+        card_key = f"K-{first_part}-{second_part}-{third_part}-000-CR"
         return card_key
 
     @staticmethod
     def button_list_creator(
+        obj: str,
         list_of_items: list[Any],
         header: str,
         data: str,
         buttons_in_layer: Optional[int] = 2
-    ) -> LayerTemplate[ButtonTemplate, ...]:
+    ) -> LayerTemplate:
         """Create a list of buttons for specific items.
 
         Args:
+            obj: Session identifier for creating a list of buttons.
             list_of_items: List of items from which to create a
                 list of buttons.
             header: The section the button belongs to.
@@ -386,11 +386,14 @@ class Tools:
             right_border = buttons_in_layer*(layer+1)
 
             for item in list_of_items[left_border:right_border]:
-                name = item[3]
-                data = f"{header}/{data}/{item[2]}"
-                button_data = [name, data]
+                if obj == "collection":
+                    button_name = item[3]
+                    button_data = f"{header}/{data}/{item[2]}"
+                else: # obj == "card"
+                    button_name = item[4]
+                    button_data = f"{header}/{data}/{item[2]}/{item[3]}"
 
-                buttons[layer].append(button_data)
+                buttons[layer].append([button_name, button_data])
 
         return buttons
 
@@ -400,7 +403,7 @@ class Tools:
         level: Optional[int] = 0,
         items_in_page: Optional[int] = 8,
         number_of_navigation_buttons: Optional[int] = 5
-    ) -> LayerTemplate[ButtonTemplate, ...]:
+    ) -> LayerTemplate:
         """Creating menu navigation.
 
         Args:
