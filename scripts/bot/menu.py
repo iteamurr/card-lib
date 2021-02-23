@@ -5,8 +5,8 @@
 from typing import Any
 
 from ..tools import API
-from ..tools import Tools
 from ..database import Select
+from ..shortcuts import MenuTemplates
 
 
 class SendMenu:
@@ -23,25 +23,12 @@ class SendMenu:
         with Select("bot_users") as select:
             locale = select.user_attribute(self.user_id, "locale")
 
-        buttons = (
-            (
-                Tools.identified_button_template(
-                    header="CoLsSe", data="collections",
-                    name="collections", locale=locale
-                ),
-                Tools.identified_button_template(
-                    header="MnSe", data="settings",
-                    name="settings", locale=locale
-                )
-            ),
-        )
-
         with Select("bot_messages") as select:
             title = select.bot_message("private_office", locale)
 
+        menu = MenuTemplates.private_office_template(locale)
         API.send_message(
-            self.user_id, title,
-            keyboard=API.inline_keyboard(buttons)
+            self.user_id, title, keyboard=API.inline_keyboard(menu)
         )
 
     def settings(self) -> None:
@@ -51,27 +38,12 @@ class SendMenu:
         with Select("bot_users") as select:
             locale = select.user_attribute(self.user_id, "locale")
 
-        buttons = (
-            (
-                Tools.identified_button_template(
-                    header="MnSe", data="locale_settings",
-                    name="locale_settings", locale=locale
-                ),
-            ),
-            (
-                Tools.identified_button_template(
-                    header="MnSe", data="private_office",
-                    name="back", locale=locale
-                ),
-            )
-        )
-
         with Select("bot_messages") as select:
             title = select.bot_message("settings", locale)
 
+        menu = MenuTemplates.settings_template(locale)
         API.send_message(
-            self.user_id, title,
-            keyboard=API.inline_keyboard(buttons)
+            self.user_id, title, keyboard=API.inline_keyboard(menu)
         )
 
 
@@ -91,25 +63,13 @@ class SwitchMenu:
         with Select("bot_users") as select:
             locale = select.user_attribute(self.user_id, "locale")
 
-        buttons = (
-            (
-                Tools.identified_button_template(
-                    header="CoLsSe", data="collections",
-                    name="collections", locale=locale
-                ),
-                Tools.identified_button_template(
-                    header="MnSe", data="settings",
-                    name="settings", locale=locale
-                )
-            ),
-        )
-
         with Select("bot_messages") as select:
             title = select.bot_message("private_office", locale)
 
+        menu = MenuTemplates.private_office_template(locale)
         API.edit_message(
             self.user_id, self.message_id, title,
-            keyboard=API.inline_keyboard(buttons)
+            keyboard=API.inline_keyboard(menu)
         )
         API.answer_callback_query(self.callback_id)
 
@@ -120,27 +80,13 @@ class SwitchMenu:
         with Select("bot_users") as select:
             locale = select.user_attribute(self.user_id, "locale")
 
-        buttons = (
-            (
-                Tools.identified_button_template(
-                    header="MnSe", data="locale_settings",
-                    name="locale_settings", locale=locale
-                ),
-            ),
-            (
-                Tools.identified_button_template(
-                    header="MnSe", data="private_office",
-                    name="back", locale=locale
-                ),
-            )
-        )
-
         with Select("bot_messages") as select:
             title = select.bot_message("settings", locale)
 
+        menu = MenuTemplates.settings_template(locale)
         API.edit_message(
             self.user_id, self.message_id, title,
-            keyboard=API.inline_keyboard(buttons)
+            keyboard=API.inline_keyboard(menu)
         )
         API.answer_callback_query(self.callback_id)
 
@@ -148,40 +94,19 @@ class SwitchMenu:
         """Switch menu to the user's Locale Settings.
         """
 
+        locale_list = {"en": "English", "ru": "Русский"}
+
         with Select("bot_users") as select:
             locale = select.user_attribute(self.user_id, "locale")
-
-        locale_list = {"en": "English", "ru": "Русский"}
-        buttons = (
-            (
-                Tools.identified_button_template(
-                    header="MnSe", data="en_locale",
-                    name="change_language_to_en", locale=locale
-                ),
-                Tools.identified_button_template(
-                    header="MnSe", data="ru_locale",
-                    name="change_language_to_ru", locale=locale
-                )
-            ),
-            (
-                Tools.identified_button_template(
-                    header="MnSe", data="private_office",
-                    name="main", locale=locale
-                ),
-                Tools.identified_button_template(
-                    header="MnSe", data="settings",
-                    name="back", locale=locale
-                )
-            )
-        )
 
         with Select("bot_messages") as select:
             title = select.bot_message(
                 "current_language", locale
             ).format(locale_list[locale])
 
+        menu = MenuTemplates.locale_settings_template(locale)
         API.edit_message(
             self.user_id, self.message_id, title,
-            keyboard=API.inline_keyboard(buttons), parse_mode="MarkdownV2"
+            keyboard=API.inline_keyboard(menu), parse_mode="MarkdownV2"
         )
         API.answer_callback_query(self.callback_id)
