@@ -19,6 +19,7 @@ class SettingsPanel:
             ins.new_bot_message("private_office", "Private Office", "en")
             ins.new_bot_message("collections", "Collections", "en")
             ins.new_bot_message("settings", "Settings", "en")
+            ins.new_bot_message("return_to_collection", "« Collection", "en")
             ins.new_bot_message("main", "« Private Office", "en")
             ins.new_bot_message("back", "‹ Back", "en")
 
@@ -119,6 +120,7 @@ class SettingsPanel:
             ins.new_bot_message("private_office", "Личный Кабинет", "ru")
             ins.new_bot_message("collections", "Коллекции", "ru")
             ins.new_bot_message("settings", "Настройки", "ru")
+            ins.new_bot_message("return_to_collection", "« Коллекция", "ru")
             ins.new_bot_message("main", "« Личный Кабинет", "ru")
             ins.new_bot_message("back", "‹ Назад", "ru")
 
@@ -182,7 +184,7 @@ class SettingsPanel:
             ins.new_bot_message("confirm_deletion", "Да, удалить", "ru")
             ins.new_bot_message("undo_delete", "Нет, не удалять", "ru")
             ins.new_bot_message("collection_deleted",
-                                "Коллекция удалена." \
+                                "Коллекция удалена. " \
                                 "Вы можете вернуться к списку коллекций:",
                                 "ru")
 
@@ -196,7 +198,7 @@ class SettingsPanel:
 
             # Card
             ins.new_bot_message("cards", "Карты коллекции «{}»:", "ru")
-            ins.new_bot_message("add_card", "+ Добавить карту", "en")
+            ins.new_bot_message("add_card", "+ Добавить карту", "ru")
             ins.new_bot_message("create_card",
                                 "Введите название карты:",
                                 "ru")
