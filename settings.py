@@ -34,6 +34,8 @@ class SettingsPanel:
             ins.new_bot_message("description_info",
                                 "*Name:* {}\n*Description:* {}",
                                 "en")
+            ins.new_bot_message("edit_name", "Edit Name", "en")
+            ins.new_bot_message("edit_description", "Edit Description", "en")
 
             # Collection
             ins.new_bot_message("add_collection", "+ Add Collection", "en")
@@ -63,8 +65,6 @@ class SettingsPanel:
             ins.new_bot_message("public_key", "Public Key", "en")
 
             # Edit Collection
-            ins.new_bot_message("edit_name", "Edit Name", "en")
-            ins.new_bot_message("edit_description", "Edit Description", "en")
             ins.new_bot_message("edit_collection_name",
                                 "Enter a new name for the collection:",
                                 "en")
@@ -110,6 +110,20 @@ class SettingsPanel:
                                 "You can already customize it:",
                                 "en")
 
+            # Edit Card
+            ins.new_bot_message("edit_card_name",
+                                "Enter a new name for the card:",
+                                "en")
+            ins.new_bot_message("edit_card_description",
+                                "Enter a new description for the card:",
+                                "en")
+            ins.new_bot_message("card_name_changed",
+                                "Card name changed",
+                                "en")
+            ins.new_bot_message("card_description_changed",
+                                "Card description changed",
+                                "en")
+
     @staticmethod
     def ru_insert_messages():
         """Writing messages in Russian to the bot phrases database.
@@ -133,6 +147,8 @@ class SettingsPanel:
             ins.new_bot_message("description_info",
                                 "*Название:* {}\n*Описание:* {}",
                                 "ru")
+            ins.new_bot_message("edit_name", "Изменить Название","ru")
+            ins.new_bot_message("edit_description", "Изменить Описание", "ru")
 
             # Collection
             ins.new_bot_message("add_collection", "+ Добавить Коллекцию", "ru")
@@ -162,8 +178,6 @@ class SettingsPanel:
             ins.new_bot_message("public_key", "Публичный Ключ", "ru")
 
             # Edit Collection
-            ins.new_bot_message("edit_name", "Изменить Название","ru")
-            ins.new_bot_message("edit_description", "Изменить Описание", "ru")
             ins.new_bot_message("edit_collection_name",
                                 "Введите новое название коллекции:",
                                 "ru")
@@ -205,4 +219,18 @@ class SettingsPanel:
             ins.new_bot_message("new_card",
                                 "Новая карта создана. " \
                                 "Вы уже можете настроить ее:",
+                                "ru")
+
+            # Edit Card
+            ins.new_bot_message("edit_card_name",
+                                "Введите новое название карты:",
+                                "ru")
+            ins.new_bot_message("edit_card_description",
+                                "Введите новое описание карты:",
+                                "ru")
+            ins.new_bot_message("card_name_changed",
+                                "Название карты изменено",
+                                "ru")
+            ins.new_bot_message("card_description_changed",
+                                "Описание карты изменено",
                                 "ru")
