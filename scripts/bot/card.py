@@ -74,6 +74,13 @@ class Card:
         if self.session_data == "info":
             self.info()
 
+        elif "edit" in self.session_data:
+            if self.session_data == "edit_name":
+                self._edit_attribute_session("name")
+
+            elif self.session_data == "edit_desc":
+                self._edit_attribute_session("description")
+
     def info(self) -> None:
         """Card Information menu.
         """
@@ -107,6 +114,22 @@ class Card:
         self.session_data = session[1]
         self.key = session[2]
         self.card_key = session[3]
+
+    def _edit_attribute_session(self, attribute):
+        key = f"UsrCaRSe/edit_{attribute}/{self.key}/{self.card_key}"
+
+        with Select("bot_users") as select:
+            locale = select.user_attribute(self.user_id, "locale")
+
+        with Select("bot_messages") as select:
+            text = select.bot_message(f"edit_card_{attribute}", locale)
+
+        with Update("bot_users") as update:
+            update.user_attribute(self.user_id, "session", key)
+            update.user_attribute(self.user_id, "menu_id", self.message_id)
+
+        API.send_message(self.user_id, text)
+        API.answer_callback_query(self.callback_id)
 
 
 class Cards:
@@ -218,6 +241,9 @@ class CardSession:
         if self.session_data == "create":
             self.new_card()
 
+        elif self.session_data in ("edit_name", "edit_description"):
+            self.change_card_attribute()
+
     def new_card(self) -> None:
         """Create a new user card.
         """
@@ -253,6 +279,48 @@ class CardSession:
         )
         API.send_message(
             self.user_id, text, keyboard=API.inline_keyboard(menu)
+        )
+
+    def change_card_attribute(self) -> None:
+        """Change any attribute of the card.
+        """
+
+        attribute = self.session_data.split("_")[1]
+
+        with Select("bot_users") as select:
+            locale = select.user_attribute(self.user_id, "locale")
+            menu_id = select.user_attribute(self.user_id, "menu_id")
+
+        with Update("bot_collections") as update:
+            update.card_attribute(
+                self.user_id, self.key, self.card_key,
+                attribute, self.message_text
+            )
+
+        with Update("bot_users") as update:
+            update.user_attribute(self.user_id, "session", None)
+
+        with Select("bot_messages") as select:
+            text = select.bot_message(f"card_{attribute}_changed", locale)
+
+        with Select("bot_collections") as select:
+            name = select.card_attribute(
+                self.user_id, self.key, self.card_key, "name"
+            )
+            description = select.card_attribute(
+                self.user_id, self.key, self.card_key, "description"
+            )
+
+        with Select("bot_messages") as select:
+            title = select.bot_message(
+                "description_info", locale
+            ).format(name, description)
+
+        menu = CardTemplates.info_template(locale, self.key, self.card_key)
+        API.send_message(self.user_id, text)
+        API.edit_message(
+            self.user_id, menu_id, title,
+            keyboard=API.inline_keyboard(menu), parse_mode="MarkdownV2"
         )
 
     def _session_initialization(self):
