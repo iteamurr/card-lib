@@ -533,6 +533,34 @@ class Update:
             ).format(sql.Identifier(attribute)), (value, user_id, key)
         )
 
+    def card_attribute(
+        self,
+        user_id: int,
+        key: str,
+        card_key: str,
+        attribute: str,
+        value: Union[str, int]
+    ) -> None:
+        """Update card attribute value.
+
+        Args:
+            user_id: Unique identifier of the target user.
+            key: Unique identifier for the collection.
+            card_key: Unique identifier for the card.
+            attribute: The name of the attribute whose
+                value you want to update.
+            value: New attribute value.
+        """
+
+        self._cursor.execute(
+            sql.SQL(
+                """UPDATE cards SET {}=%s
+                   WHERE user_id=%s AND
+                         key=%s AND
+                         card_key=%s;"""
+            ).format(sql.Identifier(attribute)), (value, user_id, key, card_key)
+        )
+
 
 class Delete:
     """Class responsible for deleting data from the database.
