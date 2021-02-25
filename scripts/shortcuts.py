@@ -265,6 +265,12 @@ class CardTemplates:
             ),
             Tools.layer_template(
                 Tools.identified_button_template(
+                    header="CaRSe", data=f"delete_card/{key}/{card_key}",
+                    name="delete_card", locale=locale
+                )
+            ),
+            Tools.layer_template(
+                Tools.identified_button_template(
                     header="CoLSe", data=f"info/{key}",
                     name="return_to_collection", locale=locale
                 ),
@@ -323,6 +329,65 @@ class CardTemplates:
             Tools.layer_template(
                 Tools.button_template(
                     header="CaRSe", data=f"info/{key}/{card_key}", name=name
+                )
+            )
+        )
+
+        return template
+
+    @staticmethod
+    def delete_menu_template(
+        locale: str,
+        key: str,
+        card_key:str
+    ) -> MenuTemplate:
+        """Delete Menu template.
+
+        Args:
+            locale: A variable defining the user's language and
+                any special preferences that the user wants to see in
+                their user interface.
+            key: Unique identifier for the collection.
+            card_key: Unique identifier for the card.
+
+        Returns:
+            template: Delete Menu template.
+        """
+
+        template = Tools.menu_template(
+            Tools.layer_template(
+                Tools.identified_button_template(
+                    header="CaRSe", data=f"confirm_delete/{key}/{card_key}",
+                    name="confirm_deletion", locale=locale
+                ),
+                Tools.identified_button_template(
+                    header="CaRSe", data=f"info/{key}/{card_key}",
+                    name="undo_delete", locale=locale
+                )
+            )
+        )
+
+        return template
+
+    @staticmethod
+    def delete_confirmation_template(locale: str, key: str) -> MenuTemplate:
+        """Delete Confirmation menu template.
+
+        Args:
+            locale: A variable defining the user's language and
+                any special preferences that the user wants to see in
+                their user interface.
+            key: Unique identifier for the collection.
+
+        Returns:
+            template: Delete Confirmation menu template.
+        """
+
+        template = Tools.menu_template(
+            Tools.layer_template(
+                Tools.identified_button_template(
+                    header="CaRsSe", data=f"collection_cards/{key}",
+                    name="return_to_collection", locale=locale
                 )
             )
         )
