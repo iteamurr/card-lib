@@ -43,19 +43,19 @@ class SettingsPanel:
                                 "Enter collection name:",
                                 "en")
             ins.new_bot_message("new_collection",
-                                "Your new collection has been created! " \
-                                "You can already start learning, for " \
-                                "this you need to create several cards in " \
-                                "the 'Cards Editor' menu, and then go to " \
-                                "the 'Start Learning' menu. The " \
+                                "🎉 Your new collection has been created!" \
+                                "\n\n🧠 You can already start learning, " \
+                                "for this you need to create several cards " \
+                                "in the 'Cards Editor' menu, and then go " \
+                                "to the 'Start Learning' menu.\n\n🔑 The " \
                                 "'Public Key' menu contains your " \
                                 "collection key. It will help you when " \
                                 "you want to share your collection with " \
-                                "your friends. In the 'Settings' menu " \
-                                "of a collection, you can change its " \
+                                "your friends.\n\n⚙️ In the 'Settings' " \
+                                "menu of a collection, you can change its " \
                                 "name and description. There is also a " \
                                 "button for deleting a collection, be " \
-                                "careful with it. Happy learning!",
+                                "careful with it.\n\n📚 Happy learning!",
                                 "en")
 
             # Collection Menu
@@ -124,6 +124,16 @@ class SettingsPanel:
                                 "Card description changed",
                                 "en")
 
+            ins.new_bot_message("delete_card", "Delete card", "en")
+            ins.new_bot_message("card_delete_confirm",
+                                "Are you sure you want to " \
+                                "delete the card?",
+                                "en")
+            ins.new_bot_message("card_deleted",
+                                "The card has been deleted. " \
+                                "You can go back to the list of cards:",
+                                "en")
+
     @staticmethod
     def ru_insert_messages():
         """Writing messages in Russian to the bot phrases database.
@@ -156,19 +166,19 @@ class SettingsPanel:
                                 "Введите название коллекции:",
                                 "ru")
             ins.new_bot_message("new_collection",
-                                "Ваша новая коллекция создана! Вы уже " \
-                                "можете начать обучение, для этого вам " \
-                                "нужно создать несколько карт в меню " \
-                                "«Редактор Карт», а затем перейти в меню " \
-                                "«Начать Обучение». В меню " \
-                                "«Публичный Ключ» находится ключ вашей " \
-                                "коллекции. Он поможет вам, когда вы " \
-                                "захотите поделиться вашей коллекцией с " \
-                                "друзьями. В меню «Настройки» коллекции " \
-                                "вы можете изменить ее название и " \
-                                "описание. Здесь же находится кнопка " \
-                                "удаления коллекции, будьте осторожнее " \
-                                "с ней. Удачного обучения!",
+                                "🎉 Ваша новая коллекция создана!\n\n" \
+                                "🧠 Вы уже можете начать обучение, для " \
+                                "этого вам нужно создать несколько карт в " \
+                                "меню «Редактор Карт», а затем перейти в " \
+                                "меню «Начать Обучение».\n\n" \
+                                "🔑 В меню «Публичный Ключ» находится ключ " \
+                                "вашей коллекции. Он поможет вам, когда вы " \
+                                "захотите поделиться коллекцией с друзьями." \
+                                "\n\n⚙️ В меню «Настройки» коллекции вы " \
+                                "можете изменить ее название и описание. " \
+                                "Здесь же находится кнопка удаления " \
+                                "коллекции, будьте осторожнее с ней. \n\n" \
+                                "📚 Удачного обучения!",
                                 "ru")
 
             # Collection Menu
@@ -233,4 +243,13 @@ class SettingsPanel:
                                 "ru")
             ins.new_bot_message("card_description_changed",
                                 "Описание карты изменено",
+                                "ru")
+
+            ins.new_bot_message("delete_card", "Удалить карту", "ru")
+            ins.new_bot_message("card_delete_confirm",
+                                "Вы уверены, что хотите удалить карту?",
+                                "ru")
+            ins.new_bot_message("card_deleted",
+                                "Карта удалена. " \
+                                "Вы можете вернуться к списку карт:",
                                 "ru")
