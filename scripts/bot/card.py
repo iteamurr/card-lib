@@ -11,6 +11,7 @@ from ..tools import Tools
 from ..database import Select
 from ..database import Insert
 from ..database import Update
+from ..database import Delete
 from ..shortcuts import CardTemplates
 
 
@@ -64,6 +65,11 @@ class Card:
         self.user_id = callback_query["from"]["id"]
         self.message_id = callback_query["message"]["message_id"]
 
+        self.session_header = None
+        self.session_data = None
+        self.key = None
+        self.card_key = None
+
         self._session_initialization()
 
     @existence_check
@@ -71,15 +77,22 @@ class Card:
         """Card-related user actions handler.
         """
 
-        if self.session_data == "info":
-            self.info()
-
-        elif "edit" in self.session_data:
+        if "edit" in self.session_data:
             if self.session_data == "edit_name":
                 self._edit_attribute_session("name")
 
             elif self.session_data == "edit_desc":
                 self._edit_attribute_session("description")
+
+        elif "delete" in self.session_data:
+            if self.session_data == "confirm_delete":
+                self.delete_confirmation()
+
+            else:
+                self.delete_menu()
+
+        else: # info
+            self.info()
 
     def info(self) -> None:
         """Card Information menu.
@@ -105,6 +118,59 @@ class Card:
         API.edit_message(
             self.user_id, self.message_id, title,
             keyboard=API.inline_keyboard(menu), parse_mode="MarkdownV2"
+        )
+        API.answer_callback_query(self.callback_id)
+
+    def delete_menu(self) -> None:
+        """Delete card menu.
+        """
+
+        with Select("bot_users") as select:
+            locale = select.user_attribute(self.user_id, "locale")
+
+        with Select("bot_messages") as select:
+            title = select.bot_message("card_delete_confirm", locale)
+
+        menu = CardTemplates.delete_menu_template(
+            locale, self.key, self.card_key
+        )
+        API.edit_message(
+            self.user_id, self.message_id, title,
+            keyboard=API.inline_keyboard(menu)
+        )
+        API.answer_callback_query(self.callback_id)
+
+    def delete_confirmation(self) -> None:
+        """Card deletion confirmation menu.
+        """
+
+        with Select("bot_users") as select:
+            locale = select.user_attribute(self.user_id, "locale")
+            cards = select.user_attribute(self.user_id, "cards")
+
+        with Select("bot_collections") as select:
+            coll_cards = select.collection_attribute(
+                self.user_id, self.key, "cards"
+            )
+
+        with Delete("bot_collections") as delete:
+            delete.card(self.user_id, self.key, self.card_key)
+
+        with Update("bot_users") as update:
+            update.user_attribute(self.user_id, "cards", cards - 1)
+
+        with Update("bot_collections") as update:
+            update.collection_attribute(
+                self.user_id, self.key, "cards", coll_cards - 1
+            )
+
+        with Select("bot_messages") as select:
+            title = select.bot_message("card_deleted", locale)
+
+        menu = CardTemplates.delete_confirmation_template(locale, self.key)
+        API.edit_message(
+            self.user_id, self.message_id, title,
+            keyboard=API.inline_keyboard(menu)
         )
         API.answer_callback_query(self.callback_id)
 
@@ -146,6 +212,9 @@ class Cards:
         self.user_id = callback_query["from"]["id"]
         self.message_id = callback_query["message"]["message_id"]
 
+        self.session_data = None
+        self.key = None
+
         self._session_initialization()
 
     def handler(self) -> None:
@@ -157,6 +226,12 @@ class Cards:
 
         elif self.session_data == "add_card":
             self.add_card_session()
+
+        elif "level" in self.session_data:
+            self._change_level()
+
+        else:
+            self._undefined_menu()
 
     def cards(self, per_page: Optional[int] = 8) -> None:
         """Show all user cards.
@@ -182,10 +257,12 @@ class Cards:
                 "cards", locale
             ).format(collection_name)
 
-        navigation = Tools.navigation_creator(len(cards_list), level)
+        navigation = Tools.navigation_creator(
+            "CaRsSe", len(cards_list), level=level, key=self.key
+        )
         items = cards_list[per_page*level:per_page*(level + 1)]
         card_buttons = Tools.button_list_creator(
-            "card", items, "CaRSe", "info"
+            "card", "CaRSe", "info", items
         )
         buttons = CardTemplates.cards_template(locale, self.key)
         menu = (navigation + card_buttons + buttons)
@@ -219,6 +296,18 @@ class Cards:
         self.session_data = session[1]
         self.key = session[2]
 
+    def _change_level(self):
+        with Update("bot_collections") as update:
+            update.collection_attribute(
+                self.user_id, self.key,
+                "page_level", int(self.session_data[-2:])
+            )
+
+        self.cards()
+
+    def _undefined_menu(self):
+        pass
+
 
 class CardSession:
     """Class that handles the card session.
@@ -231,6 +320,10 @@ class CardSession:
     def __init__(self, user_id: int, message_text: str) -> None:
         self.user_id = user_id
         self.message_text = message_text
+
+        self.session_data = None
+        self.key = None
+        self.card_key = None
 
         self._session_initialization()
 

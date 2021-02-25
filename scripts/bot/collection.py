@@ -58,6 +58,9 @@ class Collection:
         self.user_id = callback_query["from"]["id"]
         self.message_id = callback_query["message"]["message_id"]
 
+        self.session_data = None
+        self.key = None
+
         self._session_initialization()
 
     @existence_check
@@ -241,6 +244,8 @@ class Collections:
         self.user_id = callback_query["from"]["id"]
         self.message_id = callback_query["message"]["message_id"]
 
+        self.session_data = None
+
         self._session_initialization()
 
     def handler(self) -> None:
@@ -252,6 +257,9 @@ class Collections:
 
         elif self.session_data == "add_collection":
             self.add_collection_session()
+
+        elif "level" in self.session_data:
+            self._change_level()
 
         else:
             self._undefined_menu()
@@ -274,9 +282,11 @@ class Collections:
             collections_list = select.user_collections(self.user_id)
 
         items = collections_list[per_page*level:per_page*(level + 1)]
-        navigation = Tools.navigation_creator(len(collections_list), level)
+        navigation = Tools.navigation_creator(
+            "CoLsSe", len(collections_list), level=level
+        )
         collection_buttons = Tools.button_list_creator(
-            "collection", items, "CoLSe", "info"
+            "collection", "CoLSe", "info", items
         )
         buttons = CollectionTemplates.collections_template(locale)
         menu = (navigation + collection_buttons + buttons)
@@ -309,6 +319,14 @@ class Collections:
         session = Tools.define_session(self.data)
         self.session_data = session[1]
 
+    def _change_level(self):
+        with Update("bot_users") as update:
+            update.user_attribute(
+                self.user_id, "page_level", int(self.data[-2:])
+            )
+
+        self.collections()
+
     def _undefined_menu(self):
         pass
 
@@ -324,6 +342,9 @@ class CollectionSession:
     def __init__(self, user_id: int, message_text: str) -> None:
         self.user_id = user_id
         self.message_text = message_text
+
+        self.session_data = None
+        self.key = None
 
         self._session_initialization()
 
