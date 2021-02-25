@@ -312,18 +312,6 @@ class Tools:
             update.user_attribute(user_id, "locale", data[:2])
 
     @staticmethod
-    def change_level(user_id: int, data: str) -> None:
-        """Change the page number (level) of a user.
-
-        Args:
-            user_id: Unique identifier of the target user.
-            data: user session information.
-        """
-
-        with Update("bot_users") as update:
-            update.user_attribute(user_id, "page_level", int(data[-2:]))
-
-    @staticmethod
     def new_collection_key() -> str:
         """Generate a random collection key.
 
@@ -355,20 +343,20 @@ class Tools:
 
     @staticmethod
     def button_list_creator(
-        obj: str,
-        list_of_items: list[Any],
         header: str,
+        obj: str,
         data: str,
+        list_of_items: list[Any],
         buttons_in_layer: Optional[int] = 2
     ) -> LayerTemplate:
         """Create a list of buttons for specific items.
 
         Args:
             obj: Session identifier for creating a list of buttons.
-            list_of_items: List of items from which to create a
-                list of buttons.
             header: The section the button belongs to.
             data: Data associated with the callback button.
+            list_of_items: List of items from which to create a
+                list of buttons.
             buttons_in_layer: Variable responsible for the number of
                 buttons in one layer. Defaults to 2.
 
@@ -386,12 +374,12 @@ class Tools:
             right_border = buttons_in_layer*(layer+1)
 
             for item in list_of_items[left_border:right_border]:
+                button_data = f"{header}/{data}/{item[2]}"
                 if obj == "collection":
                     button_name = item[3]
-                    button_data = f"{header}/{data}/{item[2]}"
                 else: # obj == "card"
                     button_name = item[4]
-                    button_data = f"{header}/{data}/{item[2]}/{item[3]}"
+                    button_data += f"/{item[3]}"
 
                 buttons[layer].append([button_name, button_data])
 
@@ -399,17 +387,21 @@ class Tools:
 
     @staticmethod
     def navigation_creator(
+        header: str,
         number_of_items: int,
         level: Optional[int] = 0,
-        items_in_page: Optional[int] = 8,
+        key: Optional[str] = None,
+        per_page: Optional[int] = 8,
         number_of_navigation_buttons: Optional[int] = 5
     ) -> LayerTemplate:
         """Creating menu navigation.
 
         Args:
+            header: The section the button belongs to.
             number_of_items: Total number of items being navigated.
             level: The level (page) the user is on. Defaults to 0.
-            items_in_page: Number of items per page. Defaults to 8.
+            key: Unique identifier for the collection. Defaults to None.
+            per_page: Number of items per page. Defaults to 8.
             number_of_navigation_buttons: Number of navigation buttons.
                 Defaults to 5.
 
@@ -417,48 +409,115 @@ class Tools:
             buttons: List of navigation buttons.
         """
 
-        pages = (number_of_items//items_in_page
-                 + bool(number_of_items%items_in_page))
+        pages = (number_of_items//per_page + bool(number_of_items%per_page))
 
-        buttons = [[]]
-        if number_of_items < number_of_navigation_buttons*items_in_page + 1:
-            for button in range(pages):
-                page_state = ["• {} •", "{}"][button != level]
-
-                button_name = page_state.format(button + 1)
-                button_data = f"level_{'0'*(1 - button//10)}{button}"
-                buttons[0].append([button_name, button_data])
+        if number_of_items < number_of_navigation_buttons*per_page + 1:
+            buttons = Tools.small_navigation_menu(
+                header,
+                pages,
+                level,
+                key=key
+            )
 
         else:
-            for button in range(number_of_navigation_buttons):
-                if level in (0, 1):
-                    navigation = ["{}", "{}", "{}", "{} ›", "{} »"]
-                    navigation[level] = "• {} •"
+            buttons = Tools.full_navigation_menu(
+                header,
+                pages,
+                level,
+                key=key,
+                number_of_navigation_buttons=number_of_navigation_buttons
+            )
 
-                    data = pages if button == 4 else button + 1
+        return buttons
 
-                elif level in (pages - 1, pages - 2):
-                    navigation = ["« {}", "‹ {}", "{}", "{}", "{}"]
-                    navigation[level - pages + 5] = "• {} •"
+    @staticmethod
+    def small_navigation_menu(
+        header: str,
+        pages: int,
+        level: int,
+        key: Optional[str] = None
+    ) -> LayerTemplate:
+        """Create a navigation menu without unnecessary buttons.
 
-                    if button:
-                        data = pages + button - 4
-                    else:
-                        data = button + 1
+        Args:
+            header: The section the button belongs to.
+            pages: Number of pages containing collections.
+            level: The level (page) the user is on.
+            key: Unique identifier for the collection. Defaults to None.
 
+        Returns:
+            buttons: List of navigation buttons.
+        """
+
+        buttons = [[]]
+        for button in range(pages):
+            page_state = ["• {} •", "{}"][button != level]
+
+            button_name = page_state.format(button + 1)
+            button_data = f"{header}/level_{'0'*(1 - button//10)}{button}"
+            if key:
+                button_data += f"/{key}"
+
+            buttons[0].append([button_name, button_data])
+
+        return buttons
+
+    @staticmethod
+    def full_navigation_menu(
+        header: str,
+        pages: int,
+        level: int,
+        key: Optional[str] = None,
+        number_of_navigation_buttons: Optional[int] = 5
+    ) -> LayerTemplate:
+        """Create a navigation menu with the ability
+        to switch between a large number of pages.
+
+        Args:
+            header: The section the button belongs to.
+            pages: Number of pages containing collections.
+            level: The level (page) the user is on.
+            key: Unique identifier for the collection. Defaults to None.
+            number_of_navigation_buttons: Number of navigation buttons.
+                Defaults to 5.
+
+        Returns:
+            buttons: List of navigation buttons.
+        """
+
+        buttons = [[]]
+        for button in range(number_of_navigation_buttons):
+            if level in (0, 1):
+                navigation = ["{}", "{}", "{}", "{} ›", "{} »"]
+                navigation[level] = "• {} •"
+
+                data = pages if button == 4 else button + 1
+
+            elif level in (pages - 1, pages - 2):
+                navigation = ["« {}", "‹ {}", "{}", "{}", "{}"]
+                navigation[level - pages + 5] = "• {} •"
+
+                if button:
+                    data = pages + button - 4
                 else:
-                    navigation = ["« {}", "‹ {}", "• {} •", "{} ›", "{} »"]
+                    data = button + 1
 
-                    if button:
-                        if button == 4:
-                            data = pages
-                        else:
-                            data = button + level - 1
+            else:
+                navigation = ["« {}", "‹ {}", "• {} •", "{} ›", "{} »"]
+
+                if button:
+                    if button == 4:
+                        data = pages
                     else:
-                        data = 1
+                        data = button + level - 1
+                else:
+                    data = 1
 
-                button_name = navigation[button].format(data)
-                button_data = f"level_{'0'*(1 - data//10)}{data - 1}"
-                buttons[0].append([button_name, button_data])
+            button_data = f"{header}/level_{'0'*(1 - data//10)}{data - 1}"
+            if key:
+                button_data += f"/{key}"
+
+            button_name = navigation[button].format(data)
+            buttons[0].append([button_name, button_data])
 
         return buttons
