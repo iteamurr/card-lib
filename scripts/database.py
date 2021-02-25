@@ -399,8 +399,9 @@ class Select:
                 """SELECT {} FROM cards
                    WHERE user_id=%s AND
                          key=%s AND
-                         card_key=%s;"""
-            ).format(sql.Identifier(attribute)), (user_id, key, card_key)
+                         card_key=%s;
+                """).format(sql.Identifier(attribute)),
+            (user_id, key, card_key)
         )
 
         attribute_value = self._cursor.fetchone()
@@ -557,8 +558,9 @@ class Update:
                 """UPDATE cards SET {}=%s
                    WHERE user_id=%s AND
                          key=%s AND
-                         card_key=%s;"""
-            ).format(sql.Identifier(attribute)), (value, user_id, key, card_key)
+                         card_key=%s;
+                """).format(sql.Identifier(attribute)),
+            (value, user_id,key, card_key)
         )
 
 
@@ -611,4 +613,21 @@ class Delete:
                WHERE user_id=%s AND
                      key=%s;
             """, (user_id, key)
+        )
+
+    def card(self, user_id: int, key: str, card_key: str) -> None:
+        """Delete user card.
+
+        Args:
+            user_id: Unique identifier of the target user.
+            key: Unique identifier for the collection.
+            card_key: Unique identifier for the card.
+        """
+
+        self._cursor.execute(
+            """DELETE FROM cards
+               WHERE user_id=%s AND
+                     key=%s AND
+                     card_key=%s;
+            """, (user_id, key, card_key)
         )
