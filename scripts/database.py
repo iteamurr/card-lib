@@ -614,6 +614,12 @@ class Delete:
                      key=%s;
             """, (user_id, key)
         )
+        self._cursor.execute(
+            """DELETE FROM cards
+               WHERE user_id=%s AND
+                     key=%s;
+            """, (user_id, key)
+        )
 
     def card(self, user_id: int, key: str, card_key: str) -> None:
         """Delete user card.

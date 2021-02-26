@@ -343,8 +343,8 @@ class Tools:
 
     @staticmethod
     def button_list_creator(
-        header: str,
         obj: str,
+        header: str,
         data: str,
         list_of_items: list[Any],
         buttons_in_layer: Optional[int] = 2
@@ -410,6 +410,9 @@ class Tools:
         """
 
         pages = (number_of_items//per_page + bool(number_of_items%per_page))
+
+        if number_of_items < per_page + 1:
+            return [[]]
 
         if number_of_items < number_of_navigation_buttons*per_page + 1:
             buttons = Tools.small_navigation_menu(
