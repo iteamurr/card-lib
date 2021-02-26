@@ -189,6 +189,13 @@ class Collection:
         with Select("bot_users") as select:
             locale = select.user_attribute(self.user_id, "locale")
             collections = select.user_attribute(self.user_id, "collections")
+            cards = select.user_attribute(self.user_id, "cards")
+            page_level = select.user_attribute(self.user_id, "page_level")
+
+        with Select("bot_collections") as select:
+            collection_cards = select.collection_attribute(
+                self.user_id, self.key, "cards"
+            )
 
         with Delete("bot_collections") as delete:
             delete.collection(self.user_id, self.key)
@@ -197,6 +204,10 @@ class Collection:
             update.user_attribute(
                 self.user_id, "collections", collections - 1
             )
+            update.user_attribute(
+                self.user_id, "cards", cards - collection_cards
+            )
+            update.user_attribute(self.user_id, "page_level", page_level - 1)
 
         with Select("bot_messages") as select:
             title = select.bot_message("collection_deleted", locale)
@@ -281,10 +292,10 @@ class Collections:
         with Select("bot_collections") as select:
             collections_list = select.user_collections(self.user_id)
 
-        items = collections_list[per_page*level:per_page*(level + 1)]
         navigation = Tools.navigation_creator(
-            "CoLsSe", len(collections_list), level=level
+            "CoLsSe", len(collections_list), level=level, per_page=per_page
         )
+        items = collections_list[per_page*level:per_page*(level + 1)]
         collection_buttons = Tools.button_list_creator(
             "collection", "CoLSe", "info", items
         )
