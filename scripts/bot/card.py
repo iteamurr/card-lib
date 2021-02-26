@@ -149,8 +149,11 @@ class Card:
             cards = select.user_attribute(self.user_id, "cards")
 
         with Select("bot_collections") as select:
-            coll_cards = select.collection_attribute(
+            collection_cards = select.collection_attribute(
                 self.user_id, self.key, "cards"
+            )
+            page_level = select.collection_attribute(
+                self.user_id, self.key, "page_level"
             )
 
         with Delete("bot_collections") as delete:
@@ -161,7 +164,10 @@ class Card:
 
         with Update("bot_collections") as update:
             update.collection_attribute(
-                self.user_id, self.key, "cards", coll_cards - 1
+                self.user_id, self.key, "cards", collection_cards - 1
+            )
+            update.collection_attribute(
+                self.user_id, self.key, "page_level", page_level - 1
             )
 
         with Select("bot_messages") as select:
@@ -258,7 +264,8 @@ class Cards:
             ).format(collection_name)
 
         navigation = Tools.navigation_creator(
-            "CaRsSe", len(cards_list), level=level, key=self.key
+            "CaRsSe", len(cards_list),
+            level=level, key=self.key, per_page=per_page
         )
         items = cards_list[per_page*level:per_page*(level + 1)]
         card_buttons = Tools.button_list_creator(
