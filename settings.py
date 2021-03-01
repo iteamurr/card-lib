@@ -1,7 +1,10 @@
 """
-    Module responsible for working with bot messages.
+    Module responsible for bot settings.
 """
 
+import requests
+
+from scripts.config import telegram
 from scripts.database import Insert
 
 
@@ -10,7 +13,33 @@ class SettingsPanel:
     """
 
     @staticmethod
-    def en_insert_messages():
+    def set_webhook(web: str) -> None:
+        """Set bot webhook.
+
+        Args:
+            web: The address of the site where the bot is running.
+        """
+
+        url = telegram["url"].format(telegram["token"], "setWebhook")
+        body = {"url": f"{web}/{telegram['token']}"}
+
+        requests.post(url, data=body)
+
+    @staticmethod
+    def delete_webhook(web: str) -> None:
+        """Delete bot webhook.
+
+        Args:
+            web: The address of the site where the bot is running.
+        """
+
+        url = telegram["url"].format(telegram["token"], "deleteWebhook")
+        body = {"url": f"{web}/{telegram['token']}"}
+
+        requests.post(url, data=body)
+
+    @staticmethod
+    def en_insert_messages() -> None:
         """Insert messages in English to the bot phrases database
         """
 
@@ -135,7 +164,7 @@ class SettingsPanel:
                                 "en")
 
     @staticmethod
-    def ru_insert_messages():
+    def ru_insert_messages() -> None:
         """Writing messages in Russian to the bot phrases database.
         """
 
