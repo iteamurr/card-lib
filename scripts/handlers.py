@@ -4,15 +4,14 @@
 
 from typing import Any
 
-from bot.menu import SendMenu
-from bot.menu import SwitchMenu
-from bot.collection import Collection
-from bot.collection import Collections
-from bot.collection import CollectionSession
-from bot.card import Card
-from bot.card import Cards
-from bot.card import CardSession
-
+from .bot.menu import SendMenu
+from .bot.menu import SwitchMenu
+from .bot.collection import Collection
+from .bot.collection import Collections
+from .bot.collection import CollectionSession
+from .bot.card import Card
+from .bot.card import Cards
+from .bot.card import CardSession
 from .tools import Tools
 
 
@@ -77,6 +76,9 @@ class CallbackQueryHandler:
         self.data = callback_query["data"]
         self.user_id = callback_query["from"]["id"]
 
+        self.session_header = None
+        self.session_data = None
+
         self._session_initialization()
 
     def handler(self) -> None:
@@ -106,9 +108,6 @@ class CallbackQueryHandler:
 
             elif "locale" in self.session_data:
                 self._locale_settings_menu()
-
-            elif "level" in self.session_data:
-                self._level_menu()
 
             else:
                 self._undefined_menu()
@@ -146,11 +145,6 @@ class CallbackQueryHandler:
 
         self.menu.locale_settings()
 
-    def _level_menu(self):
-        Tools.change_level(self.user_id, self.session_data)
-
-        self._collections_handler()
-
     def _undefined_menu(self):
         pass
 
@@ -169,6 +163,7 @@ class SessionHandler:
 
         self.session_header = None
         self.session_action = None
+
         self._session_initialization()
 
     def handler(self) -> None:

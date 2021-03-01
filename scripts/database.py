@@ -399,8 +399,9 @@ class Select:
                 """SELECT {} FROM cards
                    WHERE user_id=%s AND
                          key=%s AND
-                         card_key=%s;"""
-            ).format(sql.Identifier(attribute)), (user_id, key, card_key)
+                         card_key=%s;
+                """).format(sql.Identifier(attribute)),
+            (user_id, key, card_key)
         )
 
         attribute_value = self._cursor.fetchone()
@@ -433,7 +434,7 @@ class Select:
         self,
         user_id: int,
         key: str
-    ) -> Union(list[tuple[str, ...], ...], None):
+    ) -> Union[list[tuple[str, ...], ...], None]:
         """Get user collection cards.
 
         Args:
@@ -533,6 +534,35 @@ class Update:
             ).format(sql.Identifier(attribute)), (value, user_id, key)
         )
 
+    def card_attribute(
+        self,
+        user_id: int,
+        key: str,
+        card_key: str,
+        attribute: str,
+        value: Union[str, int]
+    ) -> None:
+        """Update card attribute value.
+
+        Args:
+            user_id: Unique identifier of the target user.
+            key: Unique identifier for the collection.
+            card_key: Unique identifier for the card.
+            attribute: The name of the attribute whose
+                value you want to update.
+            value: New attribute value.
+        """
+
+        self._cursor.execute(
+            sql.SQL(
+                """UPDATE cards SET {}=%s
+                   WHERE user_id=%s AND
+                         key=%s AND
+                         card_key=%s;
+                """).format(sql.Identifier(attribute)),
+            (value, user_id,key, card_key)
+        )
+
 
 class Delete:
     """Class responsible for deleting data from the database.
@@ -583,4 +613,27 @@ class Delete:
                WHERE user_id=%s AND
                      key=%s;
             """, (user_id, key)
+        )
+        self._cursor.execute(
+            """DELETE FROM cards
+               WHERE user_id=%s AND
+                     key=%s;
+            """, (user_id, key)
+        )
+
+    def card(self, user_id: int, key: str, card_key: str) -> None:
+        """Delete user card.
+
+        Args:
+            user_id: Unique identifier of the target user.
+            key: Unique identifier for the collection.
+            card_key: Unique identifier for the card.
+        """
+
+        self._cursor.execute(
+            """DELETE FROM cards
+               WHERE user_id=%s AND
+                     key=%s AND
+                     card_key=%s;
+            """, (user_id, key, card_key)
         )
