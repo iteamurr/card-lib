@@ -44,6 +44,9 @@ class CommandHandler:
             elif "/settings" in self.command:
                 self._settings_menu()
 
+            elif "/collections" in self.command:
+                self._collections_menu()
+
             else:
                 self._undefined_command()
 
@@ -55,6 +58,9 @@ class CommandHandler:
 
     def _settings_menu(self):
         self.menu.settings()
+
+    def _collections_menu(self):
+        self.menu.collections()
 
     def _undefined_command(self):
         pass
