@@ -342,6 +342,22 @@ class Tools:
         return card_key
 
     @staticmethod
+    def check_collection_existence(user_id: int, key: str) -> bool:
+        """Check for the existence of a collection with a specific key.
+
+        Args:
+            user_id: Unique identifier of the target user.
+            key: Unique identifier for the collection.
+
+        Returns:
+            True for success, False otherwise.
+        """
+
+        with Select("bot_collections") as select:
+            is_exists = select.collection_attribute(user_id, key, "name")
+        return bool(is_exists)
+
+    @staticmethod
     def button_list_creator(
         obj: str,
         header: str,
