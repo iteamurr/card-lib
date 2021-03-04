@@ -20,14 +20,9 @@ def existence_check(func: Callable) -> Callable:
     """
 
     def wrapper_func(self, *args, **kwargs):
-        with Select("bot_collections") as select:
-            collection_exists = bool(
-                select.collection_attribute(
-                    self.user_id, self.key, "name"
-                )
-            )
+        is_exists = Tools.check_collection_existence(self.user_id, self.key)
 
-        if collection_exists:
+        if is_exists:
             func(self, *args, **kwargs)
         else:
             with Select("bot_users") as select:
@@ -207,7 +202,10 @@ class Collection:
             update.user_attribute(
                 self.user_id, "cards", cards - collection_cards
             )
-            update.user_attribute(self.user_id, "page_level", page_level - 1)
+            if page_level >= 1:
+                update.user_attribute(
+                    self.user_id, "page_level", page_level - 1
+                )
 
         with Select("bot_messages") as select:
             title = select.bot_message("collection_deleted", locale)

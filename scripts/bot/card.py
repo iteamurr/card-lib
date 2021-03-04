@@ -27,12 +27,9 @@ def existence_check(func: Callable) -> Callable:
                 )
             )
 
-        with Select("bot_collections") as select:
-            collection_exists = bool(
-                select.collection_attribute(
-                    self.user_id, self.key, "name"
-                )
-            )
+        collection_exists = Tools.check_collection_existence(
+            self.user_id, self.key
+        )
 
         if collection_exists and card_exists:
             func(self, *args, **kwargs)
@@ -163,12 +160,14 @@ class Card:
             update.user_attribute(self.user_id, "cards", cards - 1)
 
         with Update("bot_collections") as update:
-            update.collection_attribute(
-                self.user_id, self.key, "cards", collection_cards - 1
-            )
-            update.collection_attribute(
-                self.user_id, self.key, "page_level", page_level - 1
-            )
+            if collection_cards >= 1:
+                update.collection_attribute(
+                    self.user_id, self.key, "cards", collection_cards - 1
+                )
+            if page_level >= 1:
+                update.collection_attribute(
+                    self.user_id, self.key, "page_level", page_level - 1
+                )
 
         with Select("bot_messages") as select:
             title = select.bot_message("card_deleted", locale)
