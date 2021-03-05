@@ -20,12 +20,9 @@ def existence_check(func: Callable) -> Callable:
     """
 
     def wrapper_func(self, *args, **kwargs):
-        with Select("bot_collections") as select:
-            card_exists = bool(
-                select.card_attribute(
-                    self.user_id, self.key, self.card_key, "name"
-                )
-            )
+        card_exists = Tools.check_card_existence(
+            self.user_id, self.key, self.card_key
+        )
 
         collection_exists = Tools.check_collection_existence(
             self.user_id, self.key
