@@ -2,6 +2,7 @@
     Module with basic, non-changing user menus.
 """
 
+from functools import wraps
 from typing import Any
 from typing import Optional
 
@@ -12,6 +13,24 @@ from ..shortcuts import MenuTemplates
 from ..shortcuts import CollectionTemplates
 
 
+def send_message(menu):
+    def _send_message(func):
+        @wraps(func)
+        def wrapper_func(self, *args, **kwargs):
+            func(self, *args, **kwargs)
+
+            keyboard = API.inline_keyboard(menu(self.locale))
+
+            API.send_message(
+                self.user_id,
+                self.title,
+                keyboard=keyboard,
+                parse_mode=self.parse_mode
+            )
+        return wrapper_func
+    return _send_message
+
+
 # pylint: disable=unsubscriptable-object
 class SendMenu:
     """Sending basic user menus.
@@ -20,20 +39,20 @@ class SendMenu:
     def __init__(self, user_id: int) -> None:
         self.user_id = user_id
 
+        self.locale = None
+        self.title = None
+        self.parse_mode = None
+
+    @send_message(MenuTemplates.private_office_template)
     def private_office(self) -> None:
         """Send a user's Private Office.
         """
 
         with Select("bot_users") as select:
-            locale = select.user_attribute(self.user_id, "locale")
+            self.locale = select.user_attribute(self.user_id, "locale")
 
         with Select("bot_messages") as select:
-            title = select.bot_message("private_office", locale)
-
-        menu = MenuTemplates.private_office_template(locale)
-        API.send_message(
-            self.user_id, title, keyboard=API.inline_keyboard(menu)
-        )
+            self.title = select.bot_message("private_office", self.locale)
 
     def settings(self) -> None:
         """Send a user's Settings menu.
