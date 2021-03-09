@@ -9,6 +9,7 @@ from math import ceil
 from typing import Any
 from typing import Union
 from typing import Optional
+from typing import Callable
 import requests
 
 from .config import telegram
@@ -33,7 +34,23 @@ class API:
     """
 
     @staticmethod
-    def send_message(
+    def send_message(func: Callable) -> Callable:
+        """Send a text message.
+        """
+
+        def wrapper_func(self, *args, **kwargs):
+            func(self, *args, **kwargs)
+
+            API.api_send_message(
+                self.user_id,
+                self.title,
+                keyboard=API.api_inline_keyboard(self.menu),
+                parse_mode=self.parse_mode
+            )
+        return wrapper_func
+
+    @staticmethod
+    def api_send_message(
         chat_id: int,
         text: str,
         keyboard: Optional[dict[str, Any]] = None,
@@ -62,7 +79,7 @@ class API:
         requests.post(url, json=body)
 
     @staticmethod
-    def edit_message(
+    def api_edit_message(
         chat_id: int,
         message_id: int,
         text: str,
@@ -93,7 +110,7 @@ class API:
         requests.post(url, json=body)
 
     @staticmethod
-    def answer_callback_query(
+    def api_answer_callback_query(
         callback_query_id: int,
         text: Optional[str] = None,
         show_alert: Optional[bool] = False
@@ -118,7 +135,7 @@ class API:
         requests.post(url, json=body)
 
     @staticmethod
-    def inline_keyboard(menu_template: MenuTemplate) -> dict[str, Any]:
+    def api_inline_keyboard(menu_template: MenuTemplate) -> dict[str, Any]:
         """Create an inline keyboard wrapper.
 
         Args:
