@@ -1,37 +1,19 @@
 """
     Module with basic, non-changing user menus.
 """
+# pylint: disable=unsubscriptable-object
 
-from functools import wraps
+
 from typing import Any
 from typing import Optional
 
-from ..tools import API
+from ..tools import Bot
 from ..tools import Tools
 from ..database import Select
 from ..shortcuts import MenuTemplates
 from ..shortcuts import CollectionTemplates
 
 
-def send_message(menu):
-    def _send_message(func):
-        @wraps(func)
-        def wrapper_func(self, *args, **kwargs):
-            func(self, *args, **kwargs)
-
-            keyboard = API.inline_keyboard(menu(self.locale))
-
-            API.send_message(
-                self.user_id,
-                self.title,
-                keyboard=keyboard,
-                parse_mode=self.parse_mode
-            )
-        return wrapper_func
-    return _send_message
-
-
-# pylint: disable=unsubscriptable-object
 class SendMenu:
     """Sending basic user menus.
     """
@@ -41,9 +23,10 @@ class SendMenu:
 
         self.locale = None
         self.title = None
+        self.menu = None
         self.parse_mode = None
 
-    @send_message(MenuTemplates.private_office_template)
+    @Bot.send_message
     def private_office(self) -> None:
         """Send a user's Private Office.
         """
@@ -54,21 +37,22 @@ class SendMenu:
         with Select("bot_messages") as select:
             self.title = select.bot_message("private_office", self.locale)
 
+        self.menu = MenuTemplates.private_office_template(self.locale)
+
+    @Bot.send_message
     def settings(self) -> None:
         """Send a user's Settings menu.
         """
 
         with Select("bot_users") as select:
-            locale = select.user_attribute(self.user_id, "locale")
+            self.locale = select.user_attribute(self.user_id, "locale")
 
         with Select("bot_messages") as select:
-            title = select.bot_message("settings", locale)
+            self.title = select.bot_message("settings", self.locale)
 
-        menu = MenuTemplates.settings_template(locale)
-        API.send_message(
-            self.user_id, title, keyboard=API.inline_keyboard(menu)
-        )
+        self.menu = MenuTemplates.settings_template(self.locale)
 
+    @Bot.send_message
     def collections(self, per_page: Optional[int] = 8) -> None:
         """Send all user collections.
 
@@ -77,29 +61,29 @@ class SendMenu:
         """
 
         with Select("bot_users") as select:
-            locale = select.user_attribute(self.user_id, "locale")
+            self.locale = select.user_attribute(self.user_id, "locale")
             level = select.user_attribute(self.user_id, "page_level")
 
         with Select("bot_messages") as select:
-            title = select.bot_message("collections", locale)
+            self.title = select.bot_message("collections", self.locale)
 
         with Select("bot_collections") as select:
             collections_list = select.user_collections(self.user_id)
 
         navigation = Tools.navigation_creator(
-            "CoLsSe", len(collections_list), level=level, per_page=per_page
+            "CoLsSe",
+            len(collections_list),
+            level=level,
+            per_page=per_page
         )
-        items = collections_list[per_page*level:per_page*(level + 1)]
         collection_buttons = Tools.button_list_creator(
-            "collection", "CoLSe", "info", items
+            "collection",
+            "CoLSe",
+            "info",
+            collections_list[per_page*level:per_page*(level + 1)]
         )
-        buttons = CollectionTemplates.collections_template(locale)
-        menu = (navigation + collection_buttons + buttons)
-
-        API.send_message(
-            self.user_id, title,
-            keyboard=API.inline_keyboard(menu)
-        )
+        buttons = CollectionTemplates.collections_template(self.locale)
+        self.menu = (navigation + collection_buttons + buttons)
 
 
 class SwitchMenu:
@@ -111,40 +95,41 @@ class SwitchMenu:
         self.user_id = callback_query["from"]["id"]
         self.message_id = callback_query["message"]["message_id"]
 
+        self.locale = None
+        self.title = None
+        self.menu = None
+        self.parse_mode = None
+
+    @Bot.edit_message
+    @Bot.answer_callback_query
     def private_office(self) -> None:
         """Switch menu to the user's Private Office.
         """
 
         with Select("bot_users") as select:
-            locale = select.user_attribute(self.user_id, "locale")
+            self.locale = select.user_attribute(self.user_id, "locale")
 
         with Select("bot_messages") as select:
-            title = select.bot_message("private_office", locale)
+            self.title = select.bot_message("private_office", self.locale)
 
-        menu = MenuTemplates.private_office_template(locale)
-        API.edit_message(
-            self.user_id, self.message_id, title,
-            keyboard=API.inline_keyboard(menu)
-        )
-        API.answer_callback_query(self.callback_id)
+        self.menu = MenuTemplates.private_office_template(self.locale)
 
+    @Bot.edit_message
+    @Bot.answer_callback_query
     def settings(self) -> None:
         """Switch menu to the user's Settings.
         """
 
         with Select("bot_users") as select:
-            locale = select.user_attribute(self.user_id, "locale")
+            self.locale = select.user_attribute(self.user_id, "locale")
 
         with Select("bot_messages") as select:
-            title = select.bot_message("settings", locale)
+            self.title = select.bot_message("settings", self.locale)
 
-        menu = MenuTemplates.settings_template(locale)
-        API.edit_message(
-            self.user_id, self.message_id, title,
-            keyboard=API.inline_keyboard(menu)
-        )
-        API.answer_callback_query(self.callback_id)
+        self.menu = MenuTemplates.settings_template(self.locale)
 
+    @Bot.edit_message
+    @Bot.answer_callback_query
     def locale_settings(self) -> None:
         """Switch menu to the user's Locale Settings.
         """
@@ -152,16 +137,12 @@ class SwitchMenu:
         locale_list = {"en": "English", "ru": "Русский"}
 
         with Select("bot_users") as select:
-            locale = select.user_attribute(self.user_id, "locale")
+            self.locale = select.user_attribute(self.user_id, "locale")
 
         with Select("bot_messages") as select:
-            title = select.bot_message(
-                "current_language", locale
-            ).format(locale_list[locale])
+            self.title = select.bot_message(
+                "current_language", self.locale
+            ).format(locale_list[self.locale])
 
-        menu = MenuTemplates.locale_settings_template(locale)
-        API.edit_message(
-            self.user_id, self.message_id, title,
-            keyboard=API.inline_keyboard(menu), parse_mode="MarkdownV2"
-        )
-        API.answer_callback_query(self.callback_id)
+        self.menu = MenuTemplates.locale_settings_template(self.locale)
+        self.parse_mode = "MarkdownV2"

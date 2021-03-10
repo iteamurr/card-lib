@@ -1,6 +1,7 @@
 """
     Module with additional tools for working with a bot.
 """
+# pylint: disable=unsubscriptable-object
 
 import re
 import random
@@ -28,29 +29,62 @@ LayerTemplate = list[ButtonTemplate, ...]
 MenuTemplate = list[LayerTemplate, ...]
 
 
-# pylint: disable=unsubscriptable-object
+class Bot:
+    """Bot action decorators.
+    """
+
+    @staticmethod
+    def send_message(func: Callable) -> Callable:
+        """Decorator responsible for sending the message.
+        """
+
+        def _wrapper_func(self, *args, **kwargs):
+            func(self, *args, **kwargs)
+
+            API.send_message(
+                self.user_id,
+                self.title,
+                keyboard=API.inline_keyboard(self.menu),
+                parse_mode=self.parse_mode
+            )
+        return _wrapper_func
+
+    @staticmethod
+    def edit_message(func: Callable) -> Callable:
+        """Decorator responsible for changing the message.
+        """
+
+        def _wrapper_func(self, *args, **kwargs):
+            func(self, *args, **kwargs)
+
+            API.edit_message(
+                self.user_id,
+                self.message_id,
+                self.title,
+                keyboard=API.inline_keyboard(self.menu),
+                parse_mode=self.parse_mode
+            )
+        return _wrapper_func
+
+    @staticmethod
+    def answer_callback_query(func: Callable) -> Callable:
+        """Decorator responsible for sending a response
+        to a request from the inline keyboard.
+        """
+
+        def _wrapper_func(self, *args, **kwargs):
+            func(self, *args, **kwargs)
+
+            API.answer_callback_query(self.callback_id)
+        return _wrapper_func
+
+
 class API:
     """Working with the Telegram API.
     """
 
     @staticmethod
-    def send_message(func: Callable) -> Callable:
-        """Send a text message.
-        """
-
-        def wrapper_func(self, *args, **kwargs):
-            func(self, *args, **kwargs)
-
-            API.api_send_message(
-                self.user_id,
-                self.title,
-                keyboard=API.api_inline_keyboard(self.menu),
-                parse_mode=self.parse_mode
-            )
-        return wrapper_func
-
-    @staticmethod
-    def api_send_message(
+    def send_message(
         chat_id: int,
         text: str,
         keyboard: Optional[dict[str, Any]] = None,
@@ -79,7 +113,7 @@ class API:
         requests.post(url, json=body)
 
     @staticmethod
-    def api_edit_message(
+    def edit_message(
         chat_id: int,
         message_id: int,
         text: str,
@@ -110,7 +144,7 @@ class API:
         requests.post(url, json=body)
 
     @staticmethod
-    def api_answer_callback_query(
+    def answer_callback_query(
         callback_query_id: int,
         text: Optional[str] = None,
         show_alert: Optional[bool] = False
@@ -135,7 +169,7 @@ class API:
         requests.post(url, json=body)
 
     @staticmethod
-    def api_inline_keyboard(menu_template: MenuTemplate) -> dict[str, Any]:
+    def inline_keyboard(menu_template: MenuTemplate) -> dict[str, Any]:
         """Create an inline keyboard wrapper.
 
         Args:
