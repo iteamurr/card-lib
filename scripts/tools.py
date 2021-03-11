@@ -75,7 +75,11 @@ class Bot:
         def _wrapper_func(self, *args, **kwargs):
             func(self, *args, **kwargs)
 
-            API.answer_callback_query(self.callback_id)
+            API.answer_callback_query(
+                self.callback_id,
+                text=self.callback_query_text,
+                show_alert=self.show_alert
+            )
         return _wrapper_func
 
 

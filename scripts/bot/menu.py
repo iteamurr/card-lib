@@ -24,6 +24,8 @@ class SendMenu:
         self.locale = None
         self.title = None
         self.menu = None
+        self.callback_query_text = None
+        self.show_alert = None
         self.parse_mode = None
 
     @Bot.send_message
@@ -98,6 +100,8 @@ class SwitchMenu:
         self.locale = None
         self.title = None
         self.menu = None
+        self.callback_query_text = None
+        self.show_alert = None
         self.parse_mode = None
 
     @Bot.edit_message
