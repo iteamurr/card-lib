@@ -19,17 +19,23 @@ class CommandHandler:
     """Bot command handler.
 
     Attributes:
-        message: An object containing all information
-            about the user's message.
+        message: An object containing
+            all information about the user's message.
     """
 
     def __init__(self, message: dict[str, Any]) -> None:
+        # Variable responsible for the menu
+        # that will be passed to the user.
         self.menu = None
 
+        # Contents of the incoming message.
         self.message = message
-        self.command = message["text"]
-        self.user_id = message["chat"]["id"]
-        self.entity = message["entities"][0]["type"]
+        self.user_id = None
+        self.command = None
+        self.entity = None
+
+        # Retrieving details from a user's message.
+        self._session_initialization()
 
     def handler(self) -> None:
         """Handler defines the command and sends the menu.
@@ -49,6 +55,11 @@ class CommandHandler:
 
             else:
                 self._undefined_command()
+
+    def _session_initialization(self) -> None:
+        self.command = self.message["text"]
+        self.user_id = self.message["chat"]["id"]
+        self.entity = self.message["entities"][0]["type"]
 
     def _private_office_menu(self):
         if not Tools.check_user_existence(self.user_id):
