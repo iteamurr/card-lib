@@ -1,6 +1,6 @@
 <p align="center">
   <a href="https://t.me/card_lib_bot">
-    <img src="https://github.com/iteamurr/card-lib/raw/main/resources/git-panel.svg" width="300" style="max-width:100%;" alt="Card Lib"/>
+    <img src="https://github.com/iteamurr/card-lib/raw/main/resources/git-panel.svg" width="250" style="max-width:100%;" alt="Card Lib"/>
   </a>
 </p>
 <p align="center">
