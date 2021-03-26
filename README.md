@@ -1,7 +1,15 @@
 <p align="center">
   <a href="https://t.me/card_lib_bot">
-    <img src="https://github.com/iteamurr/card-lib/raw/main/resources/git-panel.png" alt="Card Lib"/>
+    <img src="https://github.com/iteamurr/card-lib/raw/main/resources/git-panel.png" width="500" style="max-width:100%;" alt="Card Lib"/>
   </a>
 </p>
-## About Card Lib
+<p align="center">
+  <a href="https://t.me/card_lib_bot">
+    <img alt="CardLib" src="https://img.shields.io/badge/link-Telegram-blue">
+  </a>
+  <a href="https://github.com/iteamurr/card-lib/blob/main/LICENSE">
+    <img alt="GitHub" src="https://img.shields.io/github/license/iteamurr/card-lib">
+  </a>
+</p>
+<h2>About Card Lib</h2>
 Bot for fast learning and memorization
