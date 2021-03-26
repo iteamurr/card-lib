@@ -13,3 +13,8 @@ database = {
     "user": "postgres",
     "passwd": "postgres"
 }
+
+bot_settings = {
+    "collections_per_page": 8,
+    "cards_per_page": 8
+}

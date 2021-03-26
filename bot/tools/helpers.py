@@ -1,5 +1,5 @@
 """
-    Module with additional tools for working with a bot.
+    Implements various helpers.
 """
 
 import re
@@ -9,12 +9,14 @@ from math import ceil
 from typing import Any
 from typing import Union
 from typing import Optional
+from typing import Callable
+from functools import wraps
 import requests
 
-from .config import telegram
-from .database import Select
-from .database import Insert
-from .database import Update
+from ..config import telegram
+from ..tools.database import Select
+from ..tools.database import Insert
+from ..tools.database import Update
 
 
 # Variable defining the type of button template.
@@ -27,7 +29,117 @@ LayerTemplate = list[ButtonTemplate, ...]
 MenuTemplate = list[LayerTemplate, ...]
 
 
-# pylint: disable=unsubscriptable-object
+class Bot:
+    """Bot action decorators.
+    """
+
+    @staticmethod
+    def collection_existence_check(func: Callable) -> Callable:
+        """Check the existence of the collection.
+        """
+
+        def _wrapper_func(self, *args, **kwargs):
+            is_exists = Tools.check_collection_existence(
+                self.user_id, self.key
+            )
+
+            if is_exists:
+                func(self, *args, **kwargs)
+            else:
+                with Select("bot_users") as select:
+                    locale = select.user_attribute(self.user_id, "locale")
+
+                with Select("bot_messages") as select:
+                    title = select.bot_message("does_not_exist", locale)
+
+                API.answer_callback_query(
+                    self.callback_id,
+                    text=title,
+                    show_alert=True
+                )
+        return _wrapper_func
+
+
+    @staticmethod
+    def card_and_collection_existence_check(func: Callable) -> Callable:
+        """Check the existence of the card and collection.
+        """
+
+        def _wrapper_func(self, *args, **kwargs):
+            card_exists = Tools.check_card_existence(
+                self.user_id, self.key, self.card_key
+            )
+
+            collection_exists = Tools.check_collection_existence(
+                self.user_id, self.key
+            )
+
+            if collection_exists and card_exists:
+                func(self, *args, **kwargs)
+            else:
+                with Select("bot_users") as select:
+                    locale = select.user_attribute(self.user_id, "locale")
+
+                with Select("bot_messages") as select:
+                    title = select.bot_message("does_not_exist", locale)
+
+                API.answer_callback_query(
+                    self.callback_id,
+                    text=title,
+                    show_alert=True
+                )
+        return _wrapper_func
+
+    @staticmethod
+    def send_message(func: Callable) -> Callable:
+        """Decorator responsible for sending the message.
+        """
+
+        def _wrapper_func(self, *args, **kwargs):
+            func(self, *args, **kwargs)
+
+            keyboard = API.inline_keyboard(self.menu) if self.menu else None
+
+            API.send_message(
+                self.user_id,
+                self.title,
+                keyboard=keyboard,
+                parse_mode=self.parse_mode
+            )
+        return _wrapper_func
+
+    @staticmethod
+    def edit_message(answer_callback: bool) -> Callable:
+        """Decorator responsible for changing the message.
+
+        Args:
+            answer_callback: If set to ``True``, the bot will
+                             respond to the answer callback query.
+        """
+
+        def _edit_message(func):
+            @wraps(func)
+            def _wrapper_func(self, *args, **kwargs):
+                func(self, *args, **kwargs)
+
+                API.edit_message(
+                    self.user_id,
+                    self.message_id,
+                    self.title,
+                    keyboard=API.inline_keyboard(self.menu),
+                    parse_mode=self.parse_mode
+                )
+
+                if answer_callback:
+                    API.answer_callback_query(
+                        self.callback_id,
+                        text=self.callback_query_text,
+                        show_alert=self.show_alert
+                    )
+            return _wrapper_func
+        return _edit_message
+
+
 class API:
     """Working with the Telegram API.
     """
@@ -340,6 +452,39 @@ class Tools:
 
         card_key = f"K-{first_part}-{second_part}-{third_part}-000-CR"
         return card_key
+
+    @staticmethod
+    def check_collection_existence(user_id: int, key: str) -> bool:
+        """Check for the existence of a collection with a specific key.
+
+        Args:
+            user_id: Unique identifier of the target user.
+            key: Unique identifier for the collection.
+
+        Returns:
+            True for success, False otherwise.
+        """
+
+        with Select("bot_collections") as select:
+            is_exists = select.collection_attribute(user_id, key, "name")
+        return bool(is_exists)
+
+    @staticmethod
+    def check_card_existence(user_id: int, key: str, card_key: int) -> bool:
+        """Check for the existence of a card in a specific collection.
+
+        Args:
+            user_id: Unique identifier of the target user.
+            key: Unique identifier for the collection.
+            card_key: Unique identifier for the card.
+
+        Returns:
+            True for success, False otherwise.
+        """
+
+        with Select("bot_collections") as select:
+            is_exists = select.card_attribute(user_id, key, card_key, "name")
+        return bool(is_exists)
 
     @staticmethod
     def button_list_creator(

@@ -2,8 +2,8 @@
     Module with menu templates and frequently used functions.
 """
 
-from .tools import Tools
-from .tools import MenuTemplate
+from .tools.helpers import Tools
+from .tools.helpers import MenuTemplate
 
 
 class CollectionTemplates:
@@ -31,7 +31,7 @@ class CollectionTemplates:
                     name="collection_learning", locale=locale
                 ),
                 Tools.identified_button_template(
-                    header="CaRsSe", data=f"collection_cards/{key}",
+                    header="CaRSe", data=f"collection_cards/{key}",
                     name="collection_cards", locale=locale
                 )
             ),
@@ -51,7 +51,7 @@ class CollectionTemplates:
                     name="main", locale=locale
                 ),
                 Tools.identified_button_template(
-                    header="CoLsSe", data="collections",
+                    header="CoLSe", data="collections",
                     name="back", locale=locale
                 )
             )
@@ -75,7 +75,7 @@ class CollectionTemplates:
         template = Tools.menu_template(
             Tools.layer_template(
                 Tools.identified_button_template(
-                    header="CoLsSe", data="add_collection",
+                    header="CoLSe", data="add_collection",
                     name="add_collection", locale=locale
                 ),
                 Tools.identified_button_template(
@@ -224,7 +224,7 @@ class CollectionTemplates:
         template = Tools.menu_template(
             Tools.layer_template(
                 Tools.identified_button_template(
-                    header="CoLsSe", data="collections",
+                    header="CoLSe", data="collections",
                     name="collections", locale=locale
                 )
             )
@@ -275,7 +275,7 @@ class CardTemplates:
                     name="return_to_collection", locale=locale
                 ),
                 Tools.identified_button_template(
-                    header="CaRsSe", data=f"collection_cards/{key}",
+                    header="CaRSe", data=f"collection_cards/{key}",
                     name="back", locale=locale
                 )
             )
@@ -300,7 +300,7 @@ class CardTemplates:
         template = Tools.menu_template(
             Tools.layer_template(
                 Tools.identified_button_template(
-                    header="CaRsSe", data=f"add_card/{key}",
+                    header="CaRSe", data=f"add_card/{key}",
                     name="add_card", locale=locale
                 ),
                 Tools.identified_button_template(
@@ -386,7 +386,7 @@ class CardTemplates:
         template = Tools.menu_template(
             Tools.layer_template(
                 Tools.identified_button_template(
-                    header="CaRsSe", data=f"collection_cards/{key}",
+                    header="CaRSe", data=f"collection_cards/{key}",
                     name="return_to_collection", locale=locale
                 )
             )
@@ -414,7 +414,7 @@ class MenuTemplates:
         template = Tools.menu_template(
             Tools.layer_template(
                 Tools.identified_button_template(
-                    header="CoLsSe", data="collections",
+                    header="CoLSe", data="collections",
                     name="collections", locale=locale
                 ),
                 Tools.identified_button_template(

@@ -4,8 +4,8 @@
 
 import requests
 
-from scripts.config import telegram
-from scripts.database import Insert
+from .database import Insert
+from ..config import telegram
 
 
 class SettingsPanel:

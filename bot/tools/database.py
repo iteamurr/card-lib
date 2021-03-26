@@ -10,10 +10,9 @@ from types import TracebackType
 import psycopg2
 from psycopg2 import sql
 
-from .config import database
+from ..config import database
 
 
-# pylint: disable=unsubscriptable-object
 class CreateTable:
     """Class responsible for creating tables in the database.
 
