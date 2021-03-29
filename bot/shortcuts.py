@@ -16,8 +16,8 @@ class CollectionTemplates:
 
         Args:
             locale: A variable defining the user's language and
-                any special preferences that the user wants to see in
-                their user interface.
+                    any special preferences that the user wants to see in
+                    their user interface.
             key: Unique identifier for the collection.
 
         Returns:
@@ -65,8 +65,8 @@ class CollectionTemplates:
 
         Args:
             locale: A variable defining the user's language and
-                any special preferences that the user wants to see in
-                their user interface.
+                    any special preferences that the user wants to see in
+                    their user interface.
 
         Returns:
             template: Collections menu template.
@@ -115,8 +115,8 @@ class CollectionTemplates:
 
         Args:
             locale: A variable defining the user's language and
-                any special preferences that the user wants to see in
-                their user interface.
+                    any special preferences that the user wants to see in
+                    their user interface.
             key: Unique identifier for the collection.
 
         Returns:
@@ -140,8 +140,8 @@ class CollectionTemplates:
 
         Args:
             locale: A variable defining the user's language and
-                any special preferences that the user wants to see in
-                their user interface.
+                    any special preferences that the user wants to see in
+                    their user interface.
             key: Unique identifier for the collection.
 
         Returns:
@@ -185,8 +185,8 @@ class CollectionTemplates:
 
         Args:
             locale: A variable defining the user's language and
-                any special preferences that the user wants to see in
-                their user interface.
+                    any special preferences that the user wants to see in
+                    their user interface.
             key: Unique identifier for the collection.
 
         Returns:
@@ -214,8 +214,8 @@ class CollectionTemplates:
 
         Args:
             locale: A variable defining the user's language and
-                any special preferences that the user wants to see in
-                their user interface.
+                    any special preferences that the user wants to see in
+                    their user interface.
 
         Returns:
             template: Delete Confirmation menu template.
@@ -345,8 +345,8 @@ class CardTemplates:
 
         Args:
             locale: A variable defining the user's language and
-                any special preferences that the user wants to see in
-                their user interface.
+                    any special preferences that the user wants to see in
+                    their user interface.
             key: Unique identifier for the collection.
             card_key: Unique identifier for the card.
 
@@ -375,8 +375,8 @@ class CardTemplates:
 
         Args:
             locale: A variable defining the user's language and
-                any special preferences that the user wants to see in
-                their user interface.
+                    any special preferences that the user wants to see in
+                    their user interface.
             key: Unique identifier for the collection.
 
         Returns:
