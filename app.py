@@ -6,10 +6,10 @@ from flask import Flask
 from flask import request
 from flask import jsonify
 
-from .config import telegram
-from .tools.handlers import CommandHandler
-from .tools.handlers import SessionHandler
-from .tools.handlers import CallbackQueryHandler
+from bot.config import telegram
+from bot.tools.handlers import CommandHandler
+from bot.tools.handlers import SessionHandler
+from bot.tools.handlers import CallbackQueryHandler
 
 
 app = Flask(__name__)
