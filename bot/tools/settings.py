@@ -163,6 +163,9 @@ class SettingsPanel:
                                 "You can go back to the list of cards:",
                                 "en")
 
+            # Other
+            ins.new_bot_message("cancel", "Operation aborted", "en")
+
     @staticmethod
     def ru_insert_messages() -> None:
         """Writing messages in Russian to the bot phrases database.
@@ -282,3 +285,6 @@ class SettingsPanel:
                                 "Карта удалена. " \
                                 "Вы можете вернуться к списку карт:",
                                 "ru")
+
+            # Other
+            ins.new_bot_message("cancel", "Операция прервана", "ru")
