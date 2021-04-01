@@ -10,7 +10,6 @@ from typing import Any
 from typing import Union
 from typing import Optional
 from typing import Callable
-from functools import wraps
 import requests
 
 from ..config import telegram
@@ -38,7 +37,7 @@ class Bot:
         """Check the existence of the collection.
         """
 
-        def _wrapper_func(self, *args, **kwargs):
+        def _collection_existence_check(self, *args, **kwargs):
             is_exists = Tools.check_collection_existence(
                 self.user_id, self.key
             )
@@ -57,7 +56,7 @@ class Bot:
                     text=title,
                     show_alert=True
                 )
-        return _wrapper_func
+        return _collection_existence_check
 
 
     @staticmethod
@@ -65,7 +64,7 @@ class Bot:
         """Check the existence of the card and collection.
         """
 
-        def _wrapper_func(self, *args, **kwargs):
+        def _card_and_collection_existence_check(self, *args, **kwargs):
             card_exists = Tools.check_card_existence(
                 self.user_id, self.key, self.card_key
             )
@@ -88,56 +87,72 @@ class Bot:
                     text=title,
                     show_alert=True
                 )
-        return _wrapper_func
+        return _card_and_collection_existence_check
 
     @staticmethod
     def send_message(func: Callable) -> Callable:
         """Decorator responsible for sending the message.
+
+        Note:
+            The message text must be set in the `self.text` parameter.
         """
 
-        def _wrapper_func(self, *args, **kwargs):
+        def _send_message(self, *args, **kwargs):
+            func(self, *args, **kwargs)
+
+            if self.message_menu:
+                keyboard = API.inline_keyboard(self.message_menu)
+            else:
+                keyboard = None
+
+            API.send_message(
+                self.user_id,
+                self.text,
+                keyboard=keyboard,
+                parse_mode=self.parse_mode
+            )
+        return _send_message
+
+    @staticmethod
+    def edit_message(func: Callable) -> Callable:
+        """Decorator responsible for changing the message.
+
+        Note:
+            Menu name and text must be set in the `self.title` parameter.
+        """
+
+        def _edit_message(self, *args, **kwargs):
             func(self, *args, **kwargs)
 
             keyboard = API.inline_keyboard(self.menu) if self.menu else None
 
-            API.send_message(
+            API.edit_message(
                 self.user_id,
+                self.message_id,
                 self.title,
                 keyboard=keyboard,
                 parse_mode=self.parse_mode
             )
-        return _wrapper_func
+        return _edit_message
 
     @staticmethod
-    def edit_message(answer_callback: bool) -> Callable:
-        """Decorator responsible for changing the message.
+    def answer_callback_query(func: Callable) -> Callable:
+        """Decorator responsible for the answer callback query.
 
-        Args:
-            answer_callback: If set to ``True``, the bot will
-                             respond to the answer callback query.
+        Note:
+            The response message must be set
+            to the 'self.callback_query_text' parameter.
         """
 
-        def _edit_message(func):
-            @wraps(func)
-            def _wrapper_func(self, *args, **kwargs):
-                func(self, *args, **kwargs)
+        def _answer_callback_query(self, *args, **kwargs):
+            func(self, *args, **kwargs)
 
-                API.edit_message(
-                    self.user_id,
-                    self.message_id,
-                    self.title,
-                    keyboard=API.inline_keyboard(self.menu),
-                    parse_mode=self.parse_mode
-                )
-
-                if answer_callback:
-                    API.answer_callback_query(
-                        self.callback_id,
-                        text=self.callback_query_text,
-                        show_alert=self.show_alert
-                    )
-            return _wrapper_func
-        return _edit_message
+            API.answer_callback_query(
+                self.callback_id,
+                text=self.callback_query_text,
+                show_alert=self.show_alert
+            )
+        return _answer_callback_query
 
 
 class API:
@@ -157,9 +172,9 @@ class API:
             chat_id: Unique identifier for the target chat.
             text: Text of the message to be sent.
             keyboard: Additional message interface in the form of buttons.
-                Defaults to None.
+                      Defaults to None.
             parse_mode: Mode for parsing entities in the message text.
-                Defaults to None.
+                        Defaults to None.
         """
 
         url = telegram["url"].format(telegram["token"], "sendMessage")
@@ -188,9 +203,9 @@ class API:
             message_id: Unique message identifier.
             text: Text of the message to be sent.
             keyboard: Additional message interface in the form of buttons.
-                Defaults to None.
+                      Defaults to None.
             parse_mode: Mode for parsing entities in the message text.
-                Defaults to None.
+                        Defaults to None.
         """
 
         url = telegram["url"].format(telegram["token"], "editMessageText")
@@ -217,7 +232,7 @@ class API:
             callback_query_id: Unique identifier for the query to be answered.
             text: Text of the message to be sent. Defaults to None.
             show_alert: If true, then show a notification with text.
-                Defaults to False.
+                        Defaults to False.
         """
 
         url = telegram["url"].format(telegram["token"], "answerCallbackQuery")
@@ -283,7 +298,7 @@ class Tools:
 
         Args:
             message: An object containing all information
-                about the user's message.
+                     about the user's message.
         """
 
         user_id = message["chat"]["id"]
@@ -300,8 +315,8 @@ class Tools:
 
         Args:
             locale: A variable defining the user's language and
-                any special preferences that the user wants to see in
-                their user interface.
+                    any special preferences that the user wants to see in
+                    their user interface.
 
         Returns:
             Locale for success, "en" otherwise.
@@ -353,8 +368,8 @@ class Tools:
             data: Data associated with the callback button.
             name: Button name.
             locale: A variable defining the user's language and
-                any special preferences that the user wants to see in
-                their user interface. Defaults to "en".
+                    any special preferences that the user wants to see in
+                    their user interface. Defaults to "en".
 
         Returns:
             template: Identified button template.
@@ -388,7 +403,7 @@ class Tools:
 
         Args:
             *button_templates: The buttons from which
-                the layer will be created.
+                               the layer will be created.
 
         Returns:
             layer: Layer containing buttons.
@@ -487,6 +502,28 @@ class Tools:
         return bool(is_exists)
 
     @staticmethod
+    def text_appearance(text: str) -> str:
+        """Replace invalid characters.
+
+        Args:
+            text: Text to be corrected.
+
+        Returns:
+            modified_text: Corrected text.
+        """
+
+        modified_text = (
+            text.replace("_", "\\_").replace("*", "\\*").replace("[", "\\[")
+            .replace("]", "\\]").replace("(", "\\(").replace(")", "\\)")
+            .replace("~", "\\~").replace("`", "\\`").replace(">", "\\>")
+            .replace("#", "\\#").replace("+", "\\+").replace("-", "\\-")
+            .replace("=", "\\=").replace("|", "\\|").replace("{", "\\{")
+            .replace("}", "\\}").replace(".", "\\.").replace("!", "\\!")
+        )
+
+        return modified_text
+
+    @staticmethod
     def button_list_creator(
         obj: str,
         header: str,
@@ -501,9 +538,9 @@ class Tools:
             header: The section the button belongs to.
             data: Data associated with the callback button.
             list_of_items: List of items from which to create a
-                list of buttons.
+                           list of buttons.
             buttons_in_layer: Variable responsible for the number of
-                buttons in one layer. Defaults to 2.
+                              buttons in one layer. Defaults to 2.
 
         Returns:
             buttons: List of buttons.
@@ -548,7 +585,7 @@ class Tools:
             key: Unique identifier for the collection. Defaults to None.
             per_page: Number of items per page. Defaults to 8.
             number_of_navigation_buttons: Number of navigation buttons.
-                Defaults to 5.
+                                          Defaults to 5.
 
         Returns:
             buttons: List of navigation buttons.
@@ -627,7 +664,7 @@ class Tools:
             level: The level (page) the user is on.
             key: Unique identifier for the collection. Defaults to None.
             number_of_navigation_buttons: Number of navigation buttons.
-                Defaults to 5.
+                                          Defaults to 5.
 
         Returns:
             buttons: List of navigation buttons.
