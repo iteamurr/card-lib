@@ -47,6 +47,9 @@ class CommandHandler:
             elif "/collections" in self.command:
                 self._select_collections_menu()
 
+            elif "/cancel" in self.command:
+                self._cancel_message()
+
             else:
                 self._undefined_command()
 
@@ -68,6 +71,9 @@ class CommandHandler:
 
     def _select_collections_menu(self):
         self.menu.select(self.menu.collections)
+
+    def _cancel_message(self):
+        self.menu.select(self.menu.cancel)
 
     def _undefined_command(self):
         self._select_private_office_menu()
