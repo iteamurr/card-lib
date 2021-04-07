@@ -5,12 +5,33 @@
 import requests
 
 from .database import Insert
+from .database import CreateTable
 from ..config import telegram
 
 
 class SettingsPanel:
     """Bot settings panel.
     """
+
+    @staticmethod
+    def first_launch_of_bot() -> None:
+        """Configure the bot for the first launch.
+        """
+
+        with CreateTable("bot_messages") as create:
+            create.bot_messages()
+
+        with CreateTable("bot_users") as create:
+            create.bot_users()
+
+        with CreateTable("bot_collections") as create:
+            create.bot_collections()
+
+        with CreateTable("bot_collections") as create:
+            create.bot_cards()
+
+        SettingsPanel.ru_insert_messages()
+        SettingsPanel.en_insert_messages()
 
     @staticmethod
     def set_webhook(web: str) -> None:
@@ -138,6 +159,9 @@ class SettingsPanel:
                                 "The new card has been created. " \
                                 "You can already customize it:",
                                 "en")
+            ins.new_bot_message("show_answer", "Show answer", "en")
+            ins.new_bot_message("correct_answer", "✓ Correct answer", "en")
+            ins.new_bot_message("wrong_answer", "× Wrong answer", "en")
 
             # Edit Card
             ins.new_bot_message("edit_card_name",
@@ -262,6 +286,9 @@ class SettingsPanel:
                                 "Новая карта создана. " \
                                 "Вы уже можете настроить ее:",
                                 "ru")
+            ins.new_bot_message("show_answer", "Показать ответ", "ru")
+            ins.new_bot_message("correct_answer", "✓ Правильный ответ", "ru")
+            ins.new_bot_message("wrong_answer", "× Неправильный ответ", "ru")
 
             # Edit Card
             ins.new_bot_message("edit_card_name",
