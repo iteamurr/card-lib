@@ -27,7 +27,7 @@ class CollectionTemplates:
         template = Tools.menu_template(
             Tools.layer_template(
                 Tools.identified_button_template(
-                    header="CoLSe", data=f"collection_learning/{key}",
+                    header="CaRSe", data=f"collection_learning/{key}",
                     name="collection_learning", locale=locale
                 ),
                 Tools.identified_button_template(
@@ -339,7 +339,7 @@ class CardTemplates:
     def delete_menu_template(
         locale: str,
         key: str,
-        card_key:str
+        card_key: str
     ) -> MenuTemplate:
         """Delete Menu template.
 
@@ -388,6 +388,67 @@ class CardTemplates:
                 Tools.identified_button_template(
                     header="CaRSe", data=f"collection_cards/{key}",
                     name="return_to_collection", locale=locale
+                )
+            )
+        )
+
+        return template
+
+    @staticmethod
+    def answer_menu(locale: str, key: str, card_key: str) -> MenuTemplate:
+        """Menu with a choice of correctness of the answer.
+
+        Args:
+            locale: A variable defining the user's language and
+                    any special preferences that the user wants to see in
+                    their user interface.
+            key: Unique identifier for the collection.
+            card_key: Unique identifier for the card.
+
+        Returns:
+            template: Menu template with a choice
+                      of correctness of the answer.
+        """
+
+        template = Tools.menu_template(
+            Tools.layer_template(
+                Tools.identified_button_template(
+                    header="CaRSe", data=f"correct_answer/{key}/{card_key}",
+                    name="correct_answer", locale=locale
+                ),
+                Tools.identified_button_template(
+                    header="CaRSe", data=f"wrong_answer/{key}/{card_key}",
+                    name="wrong_answer", locale=locale
+                )
+            )
+        )
+
+        return template
+
+    @staticmethod
+    def learning_menu(locale: str, key: str, card_key: str) -> MenuTemplate:
+        """Card study menu.
+
+        Args:
+            locale: A variable defining the user's language and
+                    any special preferences that the user wants to see in
+                    their user interface.
+            key: Unique identifier for the collection.
+            card_key: Unique identifier for the card.
+
+        Returns:
+            template: Study card menu template.
+        """
+
+        template = Tools.menu_template(
+            Tools.layer_template(
+                Tools.identified_button_template(
+                    header="CaRSe", data=f"show_answer/{key}/{card_key}",
+                    name="show_answer", locale=locale
+                ),
+                Tools.identified_button_template(
+                    header="CoLSe", data=f"info/{key}",
+                    name="back", locale=locale
                 )
             )
         )

@@ -136,7 +136,7 @@ class SettingsPanel:
             ins.new_bot_message("confirm_deletion", "Yes, delete", "en")
             ins.new_bot_message("undo_delete", "No, don't delete", "en")
             ins.new_bot_message("collection_deleted",
-                                "The collection has been deleted." \
+                                "The collection has been deleted. " \
                                 "You can go back to the list of collections:",
                                 "en")
 
