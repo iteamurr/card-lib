@@ -110,7 +110,11 @@ class CreateTable:
                key text,
                card_key text,
                name text,
-               description text
+               description text,
+               repetition integer,
+               difficulty integer,
+               next_repetition_date integer,
+               easy_factor real
             );
             """
         )
@@ -164,8 +168,8 @@ class Insert:
             data: Unique message identifier.
             message: Message text.
             locale: A variable defining the user's language and
-                any special preferences that the user wants to see in
-                their user interface. Defaults to "en".
+                    any special preferences that the user wants to see in
+                    their user interface. Defaults to "en".
         """
 
         self._cursor.execute(
@@ -232,7 +236,8 @@ class Insert:
         user_id: int,
         key: str,
         card_key: str,
-        name: str
+        name: str,
+        next_repetition_date: int
     ) -> None:
         """Insert a new card.
 
@@ -241,6 +246,7 @@ class Insert:
             key: Unique identifier for the collection.
             card_key: Unique identifier for the card.
             name: Card name.
+            next_repetition_date: The last time this card was reviewed.
         """
 
         self._cursor.execute(
@@ -249,9 +255,14 @@ class Insert:
                key,
                card_key,
                name,
-               description
-            ) VALUES (%s, %s, %s, %s, %s);
-            """, (user_id, key, card_key, name, "🚫")
+               description,
+               repetition,
+               difficulty,
+               next_repetition_date,
+               easy_factor
+            ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s);
+            """, (user_id, key, card_key, name, "🚫",
+                  0, 3, next_repetition_date, 2.5)
         )
 
 
@@ -301,8 +312,8 @@ class Select:
         Args:
             data: Unique message identifier.
             locale: A variable defining the user's language and
-                any special preferences that the user wants to see in
-                their user interface. Defaults to "en".
+                    any special preferences that the user wants to see in
+                    their user interface. Defaults to "en".
 
         Returns:
             message: Bot message if successful, None otherwise.
@@ -380,7 +391,7 @@ class Select:
         key: str,
         card_key: int,
         attribute: str
-    ) -> Union[str, int, None]:
+    ) -> Union[str, int, float, None]:
         """Get card attribute.
 
         Args:
@@ -500,7 +511,7 @@ class Update:
         Args:
             user_id: Unique identifier of the target user.
             attribute: The name of the attribute whose
-                value you want to update.
+                       value you want to update.
             value: New attribute value.
         """
 
@@ -523,7 +534,7 @@ class Update:
             user_id: Unique identifier of the target user.
             key: Unique identifier for the collection.
             attribute: The name of the attribute whose
-                value you want to update.
+                       value you want to update.
             value: New attribute value.
         """
 
@@ -548,7 +559,7 @@ class Update:
             key: Unique identifier for the collection.
             card_key: Unique identifier for the card.
             attribute: The name of the attribute whose
-                value you want to update.
+                       value you want to update.
             value: New attribute value.
         """
 
