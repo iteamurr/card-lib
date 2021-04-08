@@ -568,6 +568,104 @@ class Tools:
         return buttons
 
     @staticmethod
+    def memorization_algorithm(
+        repetition: int,
+        difficulty: int,
+        easy_factor: float
+    ) -> tuple[int, float]:
+        """Memorization algorithm based on constant repetition.
+
+        Note:
+            Based on SuperMemo 2 algorithm and Tsune repository. More details:
+            1. https://www.supermemo.com/en/archives1990-2015/english/ol/sm2
+            2. https://github.com/DummyDivision/Tsune
+
+        Args:
+            repetition: Number of repetitions until now.
+            difficulty: Difficulty rating for the item in question.
+                        From 0 (hardest) to 4 (easiest).
+            easy_factor: An factor for calculating the next.
+
+        Returns
+            interval: Seconds until next practice.
+            easy_factor: New easiness factor.
+        """
+
+        if difficulty < 3:
+            return 60, easy_factor
+
+        if difficulty == 3:
+            return 1800, easy_factor
+
+        repetition, easy_factor = Tools.calculate_easy_factor(
+            repetition, difficulty, easy_factor
+        )
+        interval = 86400*Tools.calculate_interval(
+            repetition, difficulty, easy_factor
+        )
+        return interval, easy_factor
+
+    @staticmethod
+    def calculate_easy_factor(
+        repetition: int,
+        difficulty: int,
+        old_easy_factor: float
+    ) -> tuple[int, float]:
+        """Calculate new easy factor from old factor and rating.
+
+        Args:
+            repetition: Number of repetitions until now.
+            difficulty: Difficulty rating for the item in question.
+                        From 0 (hardest) to 4 (easiest).
+            old_easy_factor: An factor for calculating
+                             the next repetition interval.
+
+        Returns
+            repetition: Number of repetitions.
+            new_easy_factor: New easiness factor.
+        """
+
+        if difficulty < 2:
+            repetition = 1
+
+        new_easy_factor = (old_easy_factor - 0.8
+                           + difficulty*(0.28 - 0.02*difficulty))
+
+        if new_easy_factor < 1.3:
+            new_easy_factor = 1.3
+
+        return repetition, new_easy_factor
+
+    @staticmethod
+    def calculate_interval(
+        repetition: int,
+        difficulty: int,
+        easy_factor: float
+    ) -> int:
+        """Calculate the inter-repetition interval.
+
+        Args:
+            repetition: Number of repetitions until now.
+            difficulty: Difficulty rating for the item in question.
+                        From 0 (hardest) to 4 (easiest).
+            easy_factor: An factor for calculating the next.
+
+        Returns:
+            interval: Days until next practice.
+        """
+
+        if repetition < 3:
+            return difficulty/2
+
+        if repetition == 3:
+            return difficulty
+
+        interval = easy_factor*Tools.calculate_interval(
+            repetition - 1, difficulty, easy_factor
+        )
+        return interval
+
+    @staticmethod
     def navigation_creator(
         header: str,
         number_of_items: int,
