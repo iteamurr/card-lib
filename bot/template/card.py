@@ -3,6 +3,7 @@
 """
 from typing import Any
 from typing import Optional
+from datetime import datetime
 
 from ..tools.helpers import Bot
 from ..tools.helpers import Tools
@@ -39,6 +40,7 @@ class Card:
 
         # User parameters.
         self.user_id = None
+        self.user_date = None
         self.message_text = None
         self.message_id = None
         self.data = None
@@ -67,6 +69,18 @@ class Card:
             if self.session_data == "collection_cards":
                 self.cards()
 
+            elif self.session_data == "collection_learning":
+                self.collection_learning()
+
+            elif self.session_data == "show_answer":
+                self.show_answer()
+
+            elif self.session_data in ("correct_answer", "wrong_answer"):
+                if self.session_data == "correct_answer":
+                    self._difficulty_calculation(True)
+                else:
+                    self._difficulty_calculation(False)
+
             elif self.session_data == "add_card":
                 self.new_card_session()
 
@@ -94,7 +108,7 @@ class Card:
             if self.session_data == "create":
                 self.new_card()
 
-            elif self.session_data in ("edit_name", "edit_desc"):
+            elif self.session_data in ("edit_name", "edit_description"):
                 self.change_attribute()
 
     @Bot.edit_message
@@ -136,6 +150,48 @@ class Card:
         )
         buttons = CardTemplates.cards_template(self.locale, self.key)
         self.menu = (navigation + card_buttons + buttons)
+
+    @Bot.edit_message
+    @Bot.answer_callback_query
+    @Bot.collection_existence_check
+    def collection_learning(self) -> None:
+        """Issue a card for study to the user.
+        """
+
+        with Select("bot_users") as select:
+            self.locale = select.user_attribute(self.user_id, "locale")
+
+        with Select("bot_collections") as select:
+            collection_cards = select.collection_cards(self.user_id, self.key)
+
+        weak_card = sorted(collection_cards, key=lambda x: x[8])[0]
+        self.title = weak_card[4]
+        self.menu = CardTemplates.learning_menu(
+            self.locale, self.key, weak_card[3]
+        )
+        self.parse_mode = "Markdown"
+
+    @Bot.edit_message
+    @Bot.answer_callback_query
+    @Bot.card_and_collection_existence_check
+    def show_answer(self) -> None:
+        """Show card description.
+        """
+
+        with Select("bot_users") as select:
+            self.locale = select.user_attribute(self.user_id, "locale")
+
+        with Select("bot_collections") as select:
+            self.title = Tools.text_appearance(
+                select.card_attribute(
+                    self.user_id, self.key, self.card_key, "description"
+                )
+            )
+
+        self.menu =  CardTemplates.answer_menu(
+            self.locale, self.key, self.card_key
+        )
+        self.parse_mode = "Markdown"
 
     @Bot.edit_message
     @Bot.answer_callback_query
@@ -188,7 +244,11 @@ class Card:
 
         with Insert("bot_collections") as insert:
             insert.new_card(
-                self.user_id, self.key, self.card_key, self.message_text
+                self.user_id,
+                self.key,
+                self.card_key,
+                self.message_text,
+                int(datetime.now().timestamp())
             )
 
         with Update("bot_users") as update:
@@ -289,11 +349,7 @@ class Card:
         """Change any attribute of the card.
         """
 
-        if "edit_desc" in self.session_data:
-            attribute = "description"
-
-        if "edit_name" in self.session_data:
-            attribute = "name"
+        attribute = self.session_data.split("_")[1]
 
         with Select("bot_users") as select:
             self.locale = select.user_attribute(self.user_id, "locale")
@@ -341,14 +397,14 @@ class Card:
     @Bot.send_message
     @Bot.answer_callback_query
     @Bot.card_and_collection_existence_check
-    def _edit_attribute_session(self, attribute):
-        key = f"UsrCaRSe/session_edit_{attribute}/{self.key}/{self.card_key}"
+    def _edit_attribute_session(self, attribute) -> None:
+        key = f"UsrCaRSe/edit_{attribute}/{self.key}/{self.card_key}"
 
         with Select("bot_users") as select:
             self.locale = select.user_attribute(self.user_id, "locale")
 
         with Select("bot_messages") as select:
-            self.title = select.bot_message(
+            self.text = select.bot_message(
                 f"edit_card_{attribute}", self.locale
             )
 
@@ -356,7 +412,7 @@ class Card:
             update.user_attribute(self.user_id, "session", key)
             update.user_attribute(self.user_id, "menu_id", self.message_id)
 
-    def _change_level(self):
+    def _change_level(self) -> None:
         with Update("bot_collections") as update:
             update.collection_attribute(
                 self.user_id,
@@ -367,10 +423,58 @@ class Card:
 
         self.cards()
 
-    def _session_initialization(self):
+    @Bot.card_and_collection_existence_check
+    def _difficulty_calculation(self, answer: bool) -> None:
+        with Select("bot_collections") as select:
+            difficulty = select.card_attribute(
+                self.user_id, self.key, self.card_key, "difficulty"
+            )
+            repetition = select.card_attribute(
+                self.user_id, self.key, self.card_key, "repetition"
+            )
+            easy_factor = select.card_attribute(
+                self.user_id, self.key, self.card_key, "easy_factor"
+            )
+
+        if answer:
+            if difficulty < 5:
+                difficulty += 1
+        else:
+            if difficulty > 0:
+                difficulty -= 1
+
+        next_repetition_date, easy_factor = Tools.memorization_algorithm(
+            repetition, difficulty, easy_factor
+        )
+        current_time = int(datetime.now().timestamp())
+        next_repetition_date += current_time
+        next_repetition_date = min(current_time + 172800, next_repetition_date)
+
+        with Update("bot_collections") as update:
+            update.card_attribute(
+                self.user_id, self.key, self.card_key,
+                "difficulty", difficulty
+            )
+            update.card_attribute(
+                self.user_id, self.key, self.card_key,
+                "repetition", repetition + 1
+            )
+            update.card_attribute(
+                self.user_id, self.key, self.card_key,
+                "next_repetition_date", next_repetition_date
+            )
+            update.card_attribute(
+                self.user_id, self.key, self.card_key,
+                "easy_factor", easy_factor
+            )
+
+        self.collection_learning()
+
+    def _session_initialization(self) -> None:
         if self.message:
             self.user_id = self.message["chat"]["id"]
             self.message_text = self.message["text"]
+            self.user_date = self.message["date"]
 
         if self.callback_query:
             self.user_id = self.callback_query["from"]["id"]
