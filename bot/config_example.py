@@ -16,6 +16,5 @@ database = {
 
 bot_settings = {
     "collections_per_page": 8,
-    "cards_per_page": 8,
-    "performance_rating": 0.6
+    "cards_per_page": 8
 }
