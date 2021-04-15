@@ -52,6 +52,7 @@ class Card:
         # Send message options.
         self.text = None
         self.message_menu = None
+        self.disable_web_page_preview = False
 
         # Edit menu options.
         self.menu = None
@@ -248,6 +249,7 @@ class Card:
                 self.key,
                 self.card_key,
                 self.message_text,
+                "🚫",
                 int(datetime.now().timestamp())
             )
 
