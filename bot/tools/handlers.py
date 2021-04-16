@@ -39,6 +39,9 @@ class CommandHandler:
             self.menu = Menu()
 
             if "/start" in self.command:
+                self._select_start_text()
+
+            elif "/office" in self.command:
                 self._select_private_office_menu()
 
             elif "/settings" in self.command:
@@ -60,10 +63,13 @@ class CommandHandler:
         self.command = self.message["text"]
         self.entity = self.message["entities"][0]["type"]
 
-    def _select_private_office_menu(self):
+    def _select_start_text(self):
         if not Tools.check_user_existence(self.user_id):
             Tools.add_new_user(self.message)
 
+        self.menu.select(self.menu.start)
+
+    def _select_private_office_menu(self):
         self.menu.select(self.menu.private_office)
 
     def _select_settings_menu(self):
@@ -76,7 +82,7 @@ class CommandHandler:
         self.menu.select(self.menu.cancel)
 
     def _undefined_command(self):
-        self._select_private_office_menu()
+        self._select_start_text()
 
 
 class CallbackQueryHandler:
