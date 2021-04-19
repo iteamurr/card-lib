@@ -109,7 +109,8 @@ class Bot:
                 self.user_id,
                 self.text,
                 keyboard=keyboard,
-                parse_mode=self.parse_mode
+                parse_mode=self.parse_mode,
+                disable_web_page_preview=self.disable_web_page_preview
             )
         return _send_message
 
@@ -164,7 +165,8 @@ class API:
         chat_id: int,
         text: str,
         keyboard: Optional[dict[str, Any]] = None,
-        parse_mode: Optional[str] = None
+        parse_mode: Optional[str] = None,
+        disable_web_page_preview: Optional[bool] = False
     ) -> None:
         """Send a text message with additional options.
 
@@ -175,6 +177,8 @@ class API:
                       Defaults to None.
             parse_mode: Mode for parsing entities in the message text.
                         Defaults to None.
+            disable_web_page_preview: Disables link previews
+                                      for links in this message.
         """
 
         url = telegram["url"].format(telegram["token"], "sendMessage")
@@ -182,6 +186,9 @@ class API:
 
         if parse_mode:
             body["parse_mode"] = parse_mode
+
+        if disable_web_page_preview:
+            body["disable_web_page_preview"] = disable_web_page_preview
 
         if keyboard:
             body = {**body, **keyboard}
@@ -450,7 +457,7 @@ class Tools:
         second_part = random.randrange(1000, 10000)
         third_part = random.choice(string.ascii_letters)
 
-        key = f"K-{first_part}-{second_part}-{third_part}-000-CL"
+        key = f"K-{first_part}-{second_part}-{third_part}-CL"
         return key
 
     @staticmethod
@@ -465,8 +472,23 @@ class Tools:
         second_part = random.randrange(1000, 10000)
         third_part = random.choice(string.ascii_letters)
 
-        card_key = f"K-{first_part}-{second_part}-{third_part}-000-CR"
+        card_key = f"K-{first_part}-{second_part}-{third_part}-CR"
         return card_key
+
+    @staticmethod
+    def collection_search(key: str) -> bool:
+        """Check the existence of a collection without binding to the user.
+
+        Args:
+            key: Unique identifier for the collection.
+
+        Returns:
+            True for success, False otherwise.
+        """
+
+        with Select("bot_collections") as select:
+            is_exists = select.collection_without_user_binding(key)
+        return bool(is_exists)
 
     @staticmethod
     def check_collection_existence(user_id: int, key: str) -> bool:
