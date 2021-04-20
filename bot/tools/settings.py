@@ -66,6 +66,25 @@ class SettingsPanel:
 
         with Insert("bot_messages") as ins:
             # Main
+            ins.new_bot_message("start",
+                                "Hey! I am @card\\_lib\\_bot — a bot that " \
+                                "will make it easier for you to remember " \
+                                "the material. I work on [Leitner system]" \
+                                "(https://en.wikipedia.org/wiki/Leitner_sy" \
+                                "stem), so with me you can memorize any " \
+                                "text information faster and more " \
+                                "efficiently.\n\nList of commands:" \
+                                "\n🔗 /start — Start working with a " \
+                                "bot\n🔗 /settings — Bot settings" \
+                                "\n\n🔗 /office — User's private " \
+                                "account\n🔗 /collections — List of user's " \
+                                "collections\n\n🔗 /cancel — Cancels the " \
+                                "current operation\n\nYou can send the " \
+                                "/help command at any time to re-appear " \
+                                "this message.\n\n📫 Feedback: @iteamurr" \
+                                "\n🖇 Source Code: [card-lib]" \
+                                "(https://github.com/iteamurr/card-lib)",
+                                "en")
             ins.new_bot_message("private_office", "Private Office", "en")
             ins.new_bot_message("collections", "Collections", "en")
             ins.new_bot_message("settings", "Settings", "en")
@@ -90,7 +109,7 @@ class SettingsPanel:
             # Collection
             ins.new_bot_message("add_collection", "+ Add Collection", "en")
             ins.new_bot_message("create_collection",
-                                "Enter collection name:",
+                                "Enter a name or collection key:",
                                 "en")
             ins.new_bot_message("new_collection",
                                 "🎉 Your new collection has been created!" \
@@ -106,6 +125,9 @@ class SettingsPanel:
                                 "name and description. There is also a " \
                                 "button for deleting a collection, be " \
                                 "careful with it.\n\n📚 Happy learning!",
+                                "en")
+            ins.new_bot_message("copy_collection",
+                                "Collection copied",
                                 "en")
 
             # Collection Menu
@@ -197,6 +219,25 @@ class SettingsPanel:
 
         with Insert("bot_messages") as ins:
             # Main
+            ins.new_bot_message("start",
+                                "Привет! Я @card\\_lib\\_bot — бот, который " \
+                                "облегчит тебе запоминание материала. Я " \
+                                "работаю по [системе Лейтнера](https://en." \
+                                "wikipedia.org/wiki/Leitner_system), так " \
+                                "что со мной ты сможешь быстрее и " \
+                                "эффективнее усваивать любую текстовую " \
+                                "информацию.\n\nСписок команд:\n🔗 /start " \
+                                "— Начало работы с ботом\n🔗 /settings — " \
+                                "Настройки бота\n\n🔗 /office — Личный " \
+                                "кабинет пользователя\n🔗 /collections — " \
+                                "Список коллекций пользователя\n\n🔗 " \
+                                "/cancel — Отмена текущей операции\n\nВ " \
+                                "любой момент ты можешь отправить команду " \
+                                "/help, чтобы вновь появилось это " \
+                                "сообщение.\n\n📫 Обратная связь: @iteamurr" \
+                                "\n🖇 Исходный код: [card-lib](https://" \
+                                "github.com/iteamurr/card-lib)",
+                                "ru")
             ins.new_bot_message("private_office", "Личный Кабинет", "ru")
             ins.new_bot_message("collections", "Коллекции", "ru")
             ins.new_bot_message("settings", "Настройки", "ru")
@@ -219,7 +260,7 @@ class SettingsPanel:
             # Collection
             ins.new_bot_message("add_collection", "+ Добавить Коллекцию", "ru")
             ins.new_bot_message("create_collection",
-                                "Введите название коллекции:",
+                                "Введите название или ключ коллекции:",
                                 "ru")
             ins.new_bot_message("new_collection",
                                 "🎉 Ваша новая коллекция создана!\n\n" \
@@ -235,6 +276,9 @@ class SettingsPanel:
                                 "Здесь же находится кнопка удаления " \
                                 "коллекции, будьте осторожнее с ней. \n\n" \
                                 "📚 Удачного обучения!",
+                                "ru")
+            ins.new_bot_message("copy_collection",
+                                "Коллекция скопирована",
                                 "ru")
 
             # Collection Menu
