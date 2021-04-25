@@ -58,7 +58,6 @@ class Bot:
                 )
         return _collection_existence_check
 
-
     @staticmethod
     def card_and_collection_existence_check(func: Callable) -> Callable:
         """Check the existence of the card and collection.
