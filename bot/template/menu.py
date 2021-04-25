@@ -38,6 +38,7 @@ class Menu:
         # Send/Edit menu options.
         self.message_menu = None
         self.text = None
+        self.disable_web_page_preview = False
 
         # Edit menu options.
         self.menu = None
@@ -88,6 +89,21 @@ class Menu:
 
         with Select("bot_messages") as select:
             self.text = select.bot_message("private_office", self.locale)
+
+        self.menu = MenuTemplates.private_office_template(self.locale)
+
+    def start(self) -> None:
+        """User start text template.
+        """
+
+        with Select("bot_users") as select:
+            self.locale = select.user_attribute(self.user_id, "locale")
+
+        with Select("bot_messages") as select:
+            self.text = select.bot_message("start", self.locale)
+
+        self.parse_mode = "Markdown"
+        self.disable_web_page_preview = True
 
         self.menu = MenuTemplates.private_office_template(self.locale)
 
