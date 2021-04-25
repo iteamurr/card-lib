@@ -211,6 +211,12 @@ class SettingsPanel:
 
             # Other
             ins.new_bot_message("cancel", "Operation aborted", "en")
+            ins.new_bot_message("empty_collection",
+                                "The collection you go to start learning " \
+                                "is empty. Please add new cards to the " \
+                                "collection and try to start learning again.",
+                                "en")
+
 
     @staticmethod
     def ru_insert_messages() -> None:
@@ -359,3 +365,9 @@ class SettingsPanel:
 
             # Other
             ins.new_bot_message("cancel", "Операция прервана", "ru")
+            ins.new_bot_message("empty_collection",
+                                "Коллекция, по который вы ходите пройти " \
+                                "обучение, пуста. Пожалуйста, добавьте " \
+                                "новые карты в коллекцию и попробуйте " \
+                                "снова начать обучение",
+                                "ru")
