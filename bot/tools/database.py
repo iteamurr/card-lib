@@ -237,6 +237,7 @@ class Insert:
         key: str,
         card_key: str,
         name: str,
+        description: str,
         next_repetition_date: int
     ) -> None:
         """Insert a new card.
@@ -246,6 +247,7 @@ class Insert:
             key: Unique identifier for the collection.
             card_key: Unique identifier for the card.
             name: Card name.
+            description: Card description.
             next_repetition_date: The last time this card was reviewed.
         """
 
@@ -261,9 +263,55 @@ class Insert:
                next_repetition_date,
                easy_factor
             ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s);
-            """, (user_id, key, card_key, name, "🚫",
+            """, (user_id, key, card_key, name, description,
                   0, 3, next_repetition_date, 2.5)
         )
+
+    def copy_collection(
+        self,
+        user_id: int,
+        key: str,
+        new_key: str
+    ) -> None:
+        """Copy existing collection.
+
+        Args:
+            user_id: Unique identifier of the target user.
+            key: Unique identifier for the collection.
+            new_key: New unique identifier for the collection.
+        """
+
+        self._cursor.execute(
+            """SELECT * FROM collections WHERE key=%s;
+            """, (key,)
+        )
+        info = self._cursor.fetchone()
+
+        with Insert("bot_collections") as insert:
+            insert.new_collection(user_id, new_key, f"{info[3]} - Copy")
+
+        with Update("bot_collections") as update:
+            update.collection_attribute(
+                user_id, new_key, "description", info[4]
+            )
+            update.collection_attribute(user_id, new_key, "cards", info[5])
+
+        self._cursor.execute(
+            """SELECT * FROM cards WHERE key=%s;
+            """, (key,)
+        )
+        cards = self._cursor.fetchall()
+
+        with Insert("bot_collections") as insert:
+            for card in cards:
+                insert.new_card(
+                    user_id,
+                    new_key,
+                    card_key=card[3],
+                    name=card[4],
+                    description=card[5],
+                    next_repetition_date=card[8]
+                )
 
 
 class Select:
@@ -422,7 +470,7 @@ class Select:
     def user_collections(
         self,
         user_id: int
-    ) -> Union(list[tuple[str, ...], ...], None):
+    ) -> Union[list[tuple[str, ...], ...], None]:
         """Get all user collections.
 
         Args:
@@ -462,6 +510,27 @@ class Select:
 
         cards = self._cursor.fetchall()
         return cards
+
+    def collection_without_user_binding(
+        self,
+        key: str
+    ) -> Union[list[tuple[str, ...], ...], None]:
+        """Get collection without user specification.
+
+        Args:
+            key: Unique identifier for the collection.
+
+        Returns:
+            info: All information about the collection.
+        """
+
+        self._cursor.execute(
+            """SELECT * FROM collections WHERE key=%s;
+            """, (key,)
+        )
+
+        info = self._cursor.fetchone()
+        return info
 
 
 class Update:
