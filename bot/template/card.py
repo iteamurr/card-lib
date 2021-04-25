@@ -82,6 +82,8 @@ class Card:
                 else:
                     self._difficulty_calculation(False)
 
+                self.collection_learning()
+
             elif self.session_data == "add_card":
                 self.new_card_session()
 
@@ -152,8 +154,6 @@ class Card:
         buttons = CardTemplates.cards_template(self.locale, self.key)
         self.menu = (navigation + card_buttons + buttons)
 
-    @Bot.edit_message
-    @Bot.answer_callback_query
     @Bot.collection_existence_check
     def collection_learning(self) -> None:
         """Issue a card for study to the user.
@@ -161,6 +161,21 @@ class Card:
 
         with Select("bot_users") as select:
             self.locale = select.user_attribute(self.user_id, "locale")
+
+        with Select("bot_collections") as select:
+            collection_cards = select.collection_cards(self.user_id, self.key)
+
+        if len(collection_cards) < 1:
+            self._empty_collection_error()
+        else:
+            self.next_card()
+
+    @Bot.edit_message
+    @Bot.answer_callback_query
+    @Bot.collection_existence_check
+    def next_card(self):
+        """Get the next card for training.
+        """
 
         with Select("bot_collections") as select:
             collection_cards = select.collection_cards(self.user_id, self.key)
@@ -470,8 +485,6 @@ class Card:
                 "easy_factor", easy_factor
             )
 
-        self.collection_learning()
-
     def _session_initialization(self) -> None:
         if self.message:
             self.user_id = self.message["chat"]["id"]
@@ -498,3 +511,12 @@ class Card:
 
         if len(session) > 3:
             self.card_key = session[3]
+
+    @Bot.answer_callback_query
+    def _empty_collection_error(self):
+        """Checking for training on an empty collection.
+        """
+
+        with Select("bot_messages") as select:
+            self.text = select.bot_message("empty_collection", self.locale)
+        self.show_alert = True
