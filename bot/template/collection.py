@@ -50,6 +50,7 @@ class Collection:
         # Send message options.
         self.text = None
         self.message_menu = None
+        self.disable_web_page_preview = False
 
         # Edit menu options.
         self.menu = None
@@ -98,7 +99,10 @@ class Collection:
 
         elif self.session_header == "UsrCoLSe":
             if self.session_data == "create":
-                self.new_collection()
+                if Tools.collection_search(self.message_text):
+                    self.copy_collection()
+                else:
+                    self.new_collection()
 
             elif self.session_data in ("edit_name", "edit_description"):
                 self.change_attribute()
@@ -159,6 +163,44 @@ class Collection:
 
         self.message_menu = CollectionTemplates.new_collection_template(
             self.key, self.message_text
+        )
+
+    @Bot.send_message
+    def copy_collection(self) -> None:
+        """Copy another user's collection.
+        """
+
+        with Select("bot_users") as select:
+            self.locale = select.user_attribute(self.user_id, "locale")
+            collections = select.user_attribute(self.user_id, "collections")
+            cards = select.user_attribute(self.user_id, "cards")
+
+        with Select("bot_messages") as select:
+            self.text = select.bot_message("copy_collection", self.locale)
+
+        with Insert("bot_collections") as insert:
+            new_key = Tools.new_collection_key()
+            insert.copy_collection(self.user_id, self.message_text, new_key)
+
+        with Select("bot_collections") as select:
+            new_cards = select.collection_attribute(
+                self.user_id, new_key, "cards"
+            )
+            name = select.collection_attribute(
+                self.user_id, new_key, "name"
+            )
+
+        with Update("bot_users") as update:
+            update.user_attribute(self.user_id, "session", None)
+            update.user_attribute(
+                self.user_id, "cards", cards + new_cards
+            )
+            update.user_attribute(
+                self.user_id, "collections", collections + 1
+            )
+
+        self.message_menu = CollectionTemplates.new_collection_template(
+            new_key, name
         )
 
     @Bot.edit_message
