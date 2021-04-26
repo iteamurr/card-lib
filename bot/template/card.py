@@ -7,6 +7,7 @@ from datetime import datetime
 
 from ..tools.helpers import Bot
 from ..tools.helpers import Tools
+from ..tools.helpers import Errors
 from ..tools.database import Select
 from ..tools.database import Insert
 from ..tools.database import Update
@@ -166,14 +167,14 @@ class Card:
             collection_cards = select.collection_cards(self.user_id, self.key)
 
         if len(collection_cards) < 1:
-            self._empty_collection_error()
+            Errors.empty_collection(self.callback_id, self.locale)
         else:
             self.next_card()
 
     @Bot.edit_message
     @Bot.answer_callback_query
     @Bot.collection_existence_check
-    def next_card(self):
+    def next_card(self) -> None:
         """Get the next card for training.
         """
 
@@ -511,12 +512,3 @@ class Card:
 
         if len(session) > 3:
             self.card_key = session[3]
-
-    @Bot.answer_callback_query
-    def _empty_collection_error(self):
-        """Checking for training on an empty collection.
-        """
-
-        with Select("bot_messages") as select:
-            self.text = select.bot_message("empty_collection", self.locale)
-        self.show_alert = True
