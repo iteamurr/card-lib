@@ -825,3 +825,24 @@ class Tools:
             buttons[0].append([button_name, button_data])
 
         return buttons
+
+
+class Errors:
+    """Error handling class.
+    """
+
+    @staticmethod
+    def empty_collection(callback_id: int, locale: str) -> None:
+        """Check for training on empty collection.
+
+        Args:
+            callback_id: Unique identifier for the query to be answered.
+            locale: A variable defining the user's language and
+                    any special preferences that the user wants to see in
+                    their user interface.
+        """
+
+        with Select("bot_messages") as select:
+            text = select.bot_message("empty_collection", locale)
+
+        API.answer_callback_query(callback_id, text, True)
