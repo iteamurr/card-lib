@@ -216,6 +216,9 @@ class SettingsPanel:
                                 "is empty. Please add new cards to the " \
                                 "collection and try to start learning again.",
                                 "en")
+            ins.new_bot_message("an_error_occurred",
+                                "An error occured, please try again later",
+                                "en")
 
 
     @staticmethod
@@ -370,4 +373,8 @@ class SettingsPanel:
                                 "обучение, пуста. Пожалуйста, добавьте " \
                                 "новые карты в коллекцию и попробуйте " \
                                 "снова начать обучение",
+                                "ru")
+            ins.new_bot_message("an_error_occurred",
+                                "Произошла ошибка. Пожалуйста, "\
+                                "повторите попытку позже",
                                 "ru")
