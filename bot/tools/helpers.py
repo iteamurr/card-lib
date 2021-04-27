@@ -10,6 +10,7 @@ from typing import Any
 from typing import Union
 from typing import Optional
 from typing import Callable
+from datetime import datetime
 import requests
 
 from ..config import telegram
@@ -452,11 +453,12 @@ class Tools:
             key: Unique identifier for the collection.
         """
 
-        first_part = random.randrange(1000, 10000)
-        second_part = random.randrange(1000, 10000)
-        third_part = random.choice(string.ascii_letters)
+        hex_part = hex(
+            int(datetime.now().timestamp())*random.randrange(10, 20)
+        )[2:]
+        string_part = random.choice(string.ascii_letters)
 
-        key = f"K-{first_part}-{second_part}-{third_part}-CL"
+        key = f"K-{hex_part}-{string_part}-CL"
         return key
 
     @staticmethod
@@ -467,11 +469,12 @@ class Tools:
             card_key: Unique identifier for the card.
         """
 
-        first_part = random.randrange(1000, 10000)
-        second_part = random.randrange(1000, 10000)
-        third_part = random.choice(string.ascii_letters)
+        hex_part = hex(
+            int(datetime.now().timestamp())*random.randrange(10, 20)
+        )[2:]
+        string_part = random.choice(string.ascii_letters)
 
-        card_key = f"K-{first_part}-{second_part}-{third_part}-CR"
+        card_key = f"K-{hex_part}-{string_part}-CR"
         return card_key
 
     @staticmethod
