@@ -1,22 +1,16 @@
 """
-    Implements various helpers.
+    Implementation of tools to help the bot work.
 """
-
 import re
 import random
 import string
 from math import ceil
-from typing import Any
-from typing import Union
-from typing import Optional
-from typing import Callable
+from typing import Any, Union, Optional, Callable
 from datetime import datetime
 import requests
 
 from ..config import telegram
-from ..tools.database import Select
-from ..tools.database import Insert
-from ..tools.database import Update
+from ..tools.database import Select, Insert, Update
 
 
 # Variable defining the type of button template.
@@ -32,71 +26,18 @@ MenuTemplate = list[LayerTemplate, ...]
 class Bot:
     """Bot action decorators.
     """
-
-    @staticmethod
-    def collection_existence_check(func: Callable) -> Callable:
-        """Check the existence of the collection.
-        """
-
-        def _collection_existence_check(self, *args, **kwargs):
-            is_exists = Tools.check_collection_existence(
-                self.user_id, self.key
-            )
-
-            if is_exists:
-                func(self, *args, **kwargs)
-            else:
-                with Select("bot_users") as select:
-                    locale = select.user_attribute(self.user_id, "locale")
-
-                with Select("bot_messages") as select:
-                    title = select.bot_message("does_not_exist", locale)
-
-                API.answer_callback_query(
-                    self.callback_id,
-                    text=title,
-                    show_alert=True
-                )
-        return _collection_existence_check
-
-    @staticmethod
-    def card_and_collection_existence_check(func: Callable) -> Callable:
-        """Check the existence of the card and collection.
-        """
-
-        def _card_and_collection_existence_check(self, *args, **kwargs):
-            card_exists = Tools.check_card_existence(
-                self.user_id, self.key, self.card_key
-            )
-
-            collection_exists = Tools.check_collection_existence(
-                self.user_id, self.key
-            )
-
-            if collection_exists and card_exists:
-                func(self, *args, **kwargs)
-            else:
-                with Select("bot_users") as select:
-                    locale = select.user_attribute(self.user_id, "locale")
-
-                with Select("bot_messages") as select:
-                    title = select.bot_message("does_not_exist", locale)
-
-                API.answer_callback_query(
-                    self.callback_id,
-                    text=title,
-                    show_alert=True
-                )
-        return _card_and_collection_existence_check
-
     @staticmethod
     def send_message(func: Callable) -> Callable:
         """Decorator responsible for sending the message.
 
         Note:
-            The message text must be set in the `self.text` parameter.
+            For the decorator to work, the method must have variables:
+            - `self.user_id`,
+            - `self.text`,
+            - `self.parse_mode`,
+            - `self.message_menu`,
+            - `self.disable_web_page_preview`
         """
-
         def _send_message(self, *args, **kwargs):
             func(self, *args, **kwargs)
 
@@ -106,8 +47,8 @@ class Bot:
                 keyboard = None
 
             API.send_message(
-                self.user_id,
-                self.text,
+                chat_id=self.user_id,
+                text=self.text,
                 keyboard=keyboard,
                 parse_mode=self.parse_mode,
                 disable_web_page_preview=self.disable_web_page_preview
@@ -119,18 +60,22 @@ class Bot:
         """Decorator responsible for changing the message.
 
         Note:
-            Menu name and text must be set in the `self.title` parameter.
+            For the decorator to work, the method must have variables:
+            - `self.user_id`,
+            - `self.menu`,
+            - `self.title`,
+            - `self.message_id`,
+            - `self.parse_mode`
         """
-
         def _edit_message(self, *args, **kwargs):
             func(self, *args, **kwargs)
 
             keyboard = API.inline_keyboard(self.menu) if self.menu else None
 
             API.edit_message(
-                self.user_id,
-                self.message_id,
-                self.title,
+                chat_id=self.user_id,
+                message_id=self.message_id,
+                text=self.title,
                 keyboard=keyboard,
                 parse_mode=self.parse_mode
             )
@@ -141,15 +86,16 @@ class Bot:
         """Decorator responsible for the answer callback query.
 
         Note:
-            The response message must be set
-            to the 'self.callback_query_text' parameter.
+            For the decorator to work, the method must have variables:
+            - `self.callback_id`,
+            - `self.callback_query_text`,
+            - `self.show_alert`
         """
-
         def _answer_callback_query(self, *args, **kwargs):
             func(self, *args, **kwargs)
 
             API.answer_callback_query(
-                self.callback_id,
+                callback_query_id=self.callback_id,
                 text=self.callback_query_text,
                 show_alert=self.show_alert
             )
@@ -159,7 +105,6 @@ class Bot:
 class API:
     """Working with the Telegram API.
     """
-
     @staticmethod
     def send_message(
         chat_id: int,
@@ -180,7 +125,6 @@ class API:
             disable_web_page_preview: Disables link previews
                                       for links in this message.
         """
-
         url = telegram["url"].format(telegram["token"], "sendMessage")
         body = {"chat_id": chat_id, "text": text}
 
@@ -214,7 +158,6 @@ class API:
             parse_mode: Mode for parsing entities in the message text.
                         Defaults to None.
         """
-
         url = telegram["url"].format(telegram["token"], "editMessageText")
         body = {"chat_id": chat_id, "message_id": message_id, "text": text}
 
@@ -241,7 +184,6 @@ class API:
             show_alert: If true, then show a notification with text.
                         Defaults to False.
         """
-
         url = telegram["url"].format(telegram["token"], "answerCallbackQuery")
         body = {"callback_query_id": callback_query_id}
 
@@ -261,7 +203,6 @@ class API:
         Returns:
             keyboard: Inline keyboard wrapper.
         """
-
         keyboard = {
             "reply_markup": {
                 "inline_keyboard": [
@@ -283,7 +224,6 @@ class API:
 class Tools:
     """Additional tools for working with a bot.
     """
-
     @staticmethod
     def check_user_existence(user_id: int) -> bool:
         """Check if a user is in the database.
@@ -294,7 +234,6 @@ class Tools:
         Returns:
             True for success, False otherwise.
         """
-
         with Select("bot_users") as select:
             user_existence = select.user_attribute(user_id, "locale")
         return bool(user_existence)
@@ -307,7 +246,6 @@ class Tools:
             message: An object containing all information
                      about the user's message.
         """
-
         user_id = message["chat"]["id"]
         menu_id = message["message_id"]
         username = message["from"]["username"]
@@ -328,7 +266,6 @@ class Tools:
         Returns:
             Locale for success, "en" otherwise.
         """
-
         locales = ["en", "ru"]
         return locale if locale in locales else "en"
 
@@ -342,7 +279,6 @@ class Tools:
         Returns:
             session: Session details list.
         """
-
         session = re.findall(r"([^/]+)", data)
         return session
 
@@ -356,7 +292,6 @@ class Tools:
         Returns:
             session: User session.
         """
-
         with Select("bot_users") as select:
             session = select.user_attribute(user_id, "session")
         return session
@@ -381,7 +316,6 @@ class Tools:
         Returns:
             template: Identified button template.
         """
-
         with Select("bot_messages") as select:
             identified_name = select.bot_message(name, locale)
 
@@ -400,7 +334,6 @@ class Tools:
         Returns:
             template: Identified button template.
         """
-
         template = [f"{name}", f"{header}/{data}"]
         return template
 
@@ -415,7 +348,6 @@ class Tools:
         Returns:
             layer: Layer containing buttons.
         """
-
         layer = [*button_templates]
         return layer
 
@@ -429,7 +361,6 @@ class Tools:
         Returns:
             menu: Menu containing layers.
         """
-
         menu = [*layers]
         return menu
 
@@ -441,7 +372,6 @@ class Tools:
             user_id: Unique identifier of the target user.
             data: user session information.
         """
-
         with Update("bot_users") as update:
             update.user_attribute(user_id, "locale", data[:2])
 
@@ -452,7 +382,6 @@ class Tools:
         Returns:
             key: Unique identifier for the collection.
         """
-
         hex_part = hex(
             int(datetime.now().timestamp())*random.randrange(10, 20)
         )[2:]
@@ -468,7 +397,6 @@ class Tools:
         Returns:
             card_key: Unique identifier for the card.
         """
-
         hex_part = hex(
             int(datetime.now().timestamp())*random.randrange(10, 20)
         )[2:]
@@ -487,7 +415,6 @@ class Tools:
         Returns:
             True for success, False otherwise.
         """
-
         with Select("bot_collections") as select:
             is_exists = select.collection_without_user_binding(key)
         return bool(is_exists)
@@ -503,7 +430,6 @@ class Tools:
         Returns:
             True for success, False otherwise.
         """
-
         with Select("bot_collections") as select:
             is_exists = select.collection_attribute(user_id, key, "name")
         return bool(is_exists)
@@ -520,7 +446,6 @@ class Tools:
         Returns:
             True for success, False otherwise.
         """
-
         with Select("bot_collections") as select:
             is_exists = select.card_attribute(user_id, key, card_key, "name")
         return bool(is_exists)
@@ -535,7 +460,6 @@ class Tools:
         Returns:
             modified_text: Corrected text.
         """
-
         modified_text = (
             text.replace("_", "\\_").replace("*", "\\*").replace("[", "\\[")
             .replace("]", "\\]").replace("(", "\\(").replace(")", "\\)")
@@ -569,7 +493,6 @@ class Tools:
         Returns:
             buttons: List of buttons.
         """
-
         buttons = []
         item_list_size = len(list_of_items)
         layers = ceil(item_list_size/buttons_in_layer)
@@ -614,7 +537,6 @@ class Tools:
             interval: Seconds until next practice.
             easy_factor: New easiness factor.
         """
-
         if difficulty < 3:
             return 60, easy_factor
 
@@ -622,10 +544,14 @@ class Tools:
             return 1800, easy_factor
 
         repetition, easy_factor = Tools.calculate_easy_factor(
-            repetition, difficulty, easy_factor
+            repetition=repetition,
+            difficulty=difficulty,
+            old_easy_factor=easy_factor
         )
         interval = 86400*Tools.calculate_interval(
-            repetition, difficulty, easy_factor
+            repetition=repetition,
+            difficulty=difficulty,
+            easy_factor=easy_factor
         )
         return interval, easy_factor
 
@@ -648,7 +574,6 @@ class Tools:
             repetition: Number of repetitions.
             new_easy_factor: New easiness factor.
         """
-
         if difficulty < 2:
             repetition = 1
 
@@ -677,7 +602,6 @@ class Tools:
         Returns:
             interval: Days until next practice.
         """
-
         if repetition < 3:
             return difficulty/2
 
@@ -685,7 +609,9 @@ class Tools:
             return difficulty
 
         interval = easy_factor*Tools.calculate_interval(
-            repetition - 1, difficulty, easy_factor
+            repetition=repetition - 1,
+            difficulty=difficulty,
+            easy_factor=easy_factor
         )
         return interval
 
@@ -712,7 +638,6 @@ class Tools:
         Returns:
             buttons: List of navigation buttons.
         """
-
         pages = (number_of_items//per_page + bool(number_of_items%per_page))
 
         if number_of_items < per_page + 1:
@@ -720,17 +645,17 @@ class Tools:
 
         if number_of_items < number_of_navigation_buttons*per_page + 1:
             buttons = Tools.small_navigation_menu(
-                header,
-                pages,
-                level,
+                header=header,
+                pages=pages,
+                level=level,
                 key=key
             )
 
         else:
             buttons = Tools.full_navigation_menu(
-                header,
-                pages,
-                level,
+                header=header,
+                pages=pages,
+                level=level,
                 key=key,
                 number_of_navigation_buttons=number_of_navigation_buttons
             )
@@ -755,7 +680,6 @@ class Tools:
         Returns:
             buttons: List of navigation buttons.
         """
-
         buttons = [[]]
         for button in range(pages):
             page_state = ["• {} •", "{}"][button != level]
@@ -791,7 +715,6 @@ class Tools:
         Returns:
             buttons: List of navigation buttons.
         """
-
         buttons = [[]]
         for button in range(number_of_navigation_buttons):
             if level in (0, 1):
@@ -833,7 +756,6 @@ class Tools:
 class Errors:
     """Error handling class.
     """
-
     @staticmethod
     def empty_collection(callback_id: int, locale: str) -> None:
         """Check for training on empty collection.
@@ -844,8 +766,78 @@ class Errors:
                     any special preferences that the user wants to see in
                     their user interface.
         """
-
         with Select("bot_messages") as select:
             text = select.bot_message("empty_collection", locale)
 
         API.answer_callback_query(callback_id, text, True)
+
+    @staticmethod
+    def collection_existence_check(func: Callable) -> Callable:
+        """Check the existence of the collection.
+
+        Note:
+            For the decorator to work, the method must have variables:
+            - `self.user_id`,
+            - `self.key`,
+            - `self.callback_id`
+        """
+        def _collection_existence_check(self, *args, **kwargs):
+            is_exists = Tools.check_collection_existence(
+                user_id=self.user_id,
+                key=self.key
+            )
+
+            if is_exists:
+                func(self, *args, **kwargs)
+            else:
+                with Select("bot_users") as select:
+                    locale = select.user_attribute(self.user_id, "locale")
+
+                with Select("bot_messages") as select:
+                    title = select.bot_message("does_not_exist", locale)
+
+                API.answer_callback_query(
+                    callback_query_id=self.callback_id,
+                    text=title,
+                    show_alert=True
+                )
+        return _collection_existence_check
+
+    @staticmethod
+    def card_and_collection_existence_check(func: Callable) -> Callable:
+        """Check the existence of the card and collection.
+
+        Note:
+            For the decorator to work, the method must have variables:
+            - `self.user_id`,
+            - `self.key`,
+            - `self.card_key`,
+            - `self.callback_id`
+        """
+        def _card_and_collection_existence_check(self, *args, **kwargs):
+            card_exists = Tools.check_card_existence(
+                user_id=self.user_id,
+                key=self.key,
+                card_key=self.card_key
+            )
+
+            collection_exists = Tools.check_collection_existence(
+                user_id=self.user_id,
+                key=self.key
+            )
+
+            if collection_exists and card_exists:
+                func(self, *args, **kwargs)
+            else:
+                with Select("bot_users") as select:
+                    locale = select.user_attribute(self.user_id, "locale")
+
+                with Select("bot_messages") as select:
+                    title = select.bot_message("does_not_exist", locale)
+
+                API.answer_callback_query(
+                    callback_query_id=self.callback_id,
+                    text=title,
+                    show_alert=True
+                )
+        return _card_and_collection_existence_check

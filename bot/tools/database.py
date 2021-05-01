@@ -1,11 +1,8 @@
 """
-    Database module.
+    Implementation of tools for working with a database.
 """
-
 from __future__ import annotations
-from typing import Type
-from typing import Union
-from typing import Optional
+from typing import Type, Union, Optional
 from types import TracebackType
 import psycopg2
 from psycopg2 import sql
@@ -19,7 +16,6 @@ class CreateTable:
     Attributes:
         db_name: Name of the database to connect to.
     """
-
     def __init__(self, db_name: str) -> None:
         self.db_name = db_name
 
@@ -29,8 +25,10 @@ class CreateTable:
     def __enter__(self) -> CreateTable:
         self._connection = psycopg2.connect(
             dbname=self.db_name,
-            user=database["user"], password=database["passwd"],
-            host=database["host"], port=database["port"]
+            user=database["user"],
+            password=database["passwd"],
+            host=database["host"],
+            port=database["port"]
         )
         self._cursor = self._connection.cursor()
 
@@ -52,7 +50,6 @@ class CreateTable:
     def bot_messages(self) -> None:
         """Create a bot message table.
         """
-
         self._cursor.execute(
             """CREATE TABLE messages (
                id serial PRIMARY KEY,
@@ -66,7 +63,6 @@ class CreateTable:
     def bot_users(self) -> None:
         """Create a bot users table.
         """
-
         self._cursor.execute(
             """CREATE TABLE users (
                id serial PRIMARY KEY,
@@ -85,7 +81,6 @@ class CreateTable:
     def bot_collections(self) -> None:
         """Create a bot user collections table.
         """
-
         self._cursor.execute(
             """CREATE TABLE collections (
                id serial PRIMARY KEY,
@@ -102,7 +97,6 @@ class CreateTable:
     def bot_cards(self) -> None:
         """create a bot user card table.
         """
-
         self._cursor.execute(
             """CREATE TABLE cards (
                id serial PRIMARY KEY,
@@ -126,7 +120,6 @@ class Insert:
     Attributes:
         db_name: Name of the database to connect to.
     """
-
     def __init__(self, db_name) -> None:
         self._db_name = db_name
 
@@ -136,8 +129,10 @@ class Insert:
     def __enter__(self) -> Insert:
         self._connection = psycopg2.connect(
             dbname=self._db_name,
-            user=database["user"], password=database["passwd"],
-            host=database["host"], port=database["port"]
+            user=database["user"],
+            password=database["passwd"],
+            host=database["host"],
+            port=database["port"]
         )
         self._cursor = self._connection.cursor()
 
@@ -171,7 +166,6 @@ class Insert:
                     any special preferences that the user wants to see in
                     their user interface. Defaults to "en".
         """
-
         self._cursor.execute(
             """INSERT INTO messages (locale, data, message)
                VALUES (%s, %s, %s);
@@ -195,7 +189,6 @@ class Insert:
                     their user interface.
             menu_id: Unique menu identifier.
         """
-
         self._cursor.execute(
             """INSERT INTO users (
                user_id,
@@ -218,7 +211,6 @@ class Insert:
             key: Unique identifier for the collection.
             name: Collection name.
         """
-
         self._cursor.execute(
             """INSERT INTO collections (
                user_id,
@@ -250,7 +242,6 @@ class Insert:
             description: Card description.
             next_repetition_date: The last time this card was reviewed.
         """
-
         self._cursor.execute(
             """INSERT INTO cards (
                user_id,
@@ -280,7 +271,6 @@ class Insert:
             key: Unique identifier for the collection.
             new_key: New unique identifier for the collection.
         """
-
         self._cursor.execute(
             """SELECT * FROM collections WHERE key=%s;
             """, (key,)
@@ -292,7 +282,10 @@ class Insert:
 
         with Update("bot_collections") as update:
             update.collection_attribute(
-                user_id, new_key, "description", info[4]
+                user_id=user_id,
+                key=new_key,
+                attribute="description",
+                value=info[4]
             )
             update.collection_attribute(user_id, new_key, "cards", info[5])
 
@@ -305,8 +298,8 @@ class Insert:
         with Insert("bot_collections") as insert:
             for card in cards:
                 insert.new_card(
-                    user_id,
-                    new_key,
+                    user_id=user_id,
+                    key=new_key,
                     card_key=card[3],
                     name=card[4],
                     description=card[5],
@@ -320,7 +313,6 @@ class Select:
     Attributes:
         db_name: Name of the database to connect to.
     """
-
     def __init__(self, db_name: str) -> None:
         self._db_name = db_name
 
@@ -330,8 +322,10 @@ class Select:
     def __enter__(self) -> Select:
         self._connection = psycopg2.connect(
             dbname=self._db_name,
-            user=database["user"], password=database["passwd"],
-            host=database["host"], port=database["port"]
+            user=database["user"],
+            password=database["passwd"],
+            host=database["host"],
+            port=database["port"]
         )
         self._cursor = self._connection.cursor()
 
@@ -366,7 +360,6 @@ class Select:
         Returns:
             message: Bot message if successful, None otherwise.
         """
-
         self._cursor.execute(
             """SELECT message FROM messages
                WHERE locale=%s AND
@@ -393,7 +386,6 @@ class Select:
         Returns:
             attribute_value: Attribute value if successful, None otherwise.
         """
-
         self._cursor.execute(
             sql.SQL(
                 "SELECT {} FROM users WHERE user_id=%s;"
@@ -421,7 +413,6 @@ class Select:
         Returns:
             attribute_value: Attribute value if successful, None otherwise.
         """
-
         self._cursor.execute(
             sql.SQL(
                 "SELECT {} FROM collections WHERE user_id=%s AND key=%s;"
@@ -451,7 +442,6 @@ class Select:
         Returns:
             attribute_value: Attribute value if successful, None otherwise.
         """
-
         self._cursor.execute(
             sql.SQL(
                 """SELECT {} FROM cards
@@ -479,7 +469,6 @@ class Select:
         Returns:
             collections: All user collections.
         """
-
         self._cursor.execute(
             """SELECT * FROM collections WHERE user_id=%s;
             """, (user_id,)
@@ -502,7 +491,6 @@ class Select:
         Returns:
             cards: All collection cards.
         """
-
         self._cursor.execute(
             """SELECT * FROM cards WHERE user_id=%s and key=%s;
             """, (user_id, key)
@@ -523,7 +511,6 @@ class Select:
         Returns:
             info: All information about the collection.
         """
-
         self._cursor.execute(
             """SELECT * FROM collections WHERE key=%s;
             """, (key,)
@@ -539,7 +526,6 @@ class Update:
     Attributes:
         db_name: Name of the database to connect to.
     """
-
     def __init__(self, db_name: str) -> None:
         self._db_name = db_name
 
@@ -549,8 +535,10 @@ class Update:
     def __enter__(self) -> Update:
         self._connection = psycopg2.connect(
             dbname=self._db_name,
-            user=database["user"], password=database["passwd"],
-            host=database["host"], port=database["port"]
+            user=database["user"],
+            password=database["passwd"],
+            host=database["host"],
+            port=database["port"]
         )
         self._cursor = self._connection.cursor()
 
@@ -583,7 +571,6 @@ class Update:
                        value you want to update.
             value: New attribute value.
         """
-
         self._cursor.execute(
             sql.SQL(
                 "UPDATE users SET {}=%s WHERE user_id=%s;"
@@ -606,7 +593,6 @@ class Update:
                        value you want to update.
             value: New attribute value.
         """
-
         self._cursor.execute(
             sql.SQL(
                 "UPDATE collections SET {}=%s WHERE user_id=%s AND key=%s;"
@@ -631,7 +617,6 @@ class Update:
                        value you want to update.
             value: New attribute value.
         """
-
         self._cursor.execute(
             sql.SQL(
                 """UPDATE cards SET {}=%s
@@ -649,7 +634,6 @@ class Delete:
     Attributes:
         db_name: Name of the database to connect to.
     """
-
     def __init__(self, db_name: str) -> None:
         self._db_name = db_name
 
@@ -659,8 +643,10 @@ class Delete:
     def __enter__(self) -> Delete:
         self._connection = psycopg2.connect(
             dbname=self._db_name,
-            user=database["user"], password=database["passwd"],
-            host=database["host"], port=database["port"]
+            user=database["user"],
+            password=database["passwd"],
+            host=database["host"],
+            port=database["port"]
         )
         self._cursor = self._connection.cursor()
 
@@ -686,7 +672,6 @@ class Delete:
             user_id: Unique identifier of the target user.
             key: Unique identifier for the collection.
         """
-
         self._cursor.execute(
             """DELETE FROM collections
                WHERE user_id=%s AND
@@ -708,7 +693,6 @@ class Delete:
             key: Unique identifier for the collection.
             card_key: Unique identifier for the card.
         """
-
         self._cursor.execute(
             """DELETE FROM cards
                WHERE user_id=%s AND

@@ -1,23 +1,17 @@
 """
-    Implementation of tools for working with the ``Card`` object.
+    Implementation of tools for working with the `Card` object.
 """
-from typing import Any
-from typing import Optional
 from datetime import datetime
+from typing import Any, Optional
 
-from ..tools.helpers import Bot
-from ..tools.helpers import Tools
-from ..tools.helpers import Errors
-from ..tools.database import Select
-from ..tools.database import Insert
-from ..tools.database import Update
-from ..tools.database import Delete
-from ..shortcuts import CardTemplates
 from ..config import bot_settings
+from ..shortcuts import CardTemplates
+from ..tools.helpers import Bot, Tools, Errors
+from ..tools.database import Select, Insert, Update, Delete
 
 
 class Card:
-    """Class defining the ``Card`` object.
+    """Class defining the `Card` object.
 
     Attributes:
         message: An object containing all information
@@ -53,7 +47,7 @@ class Card:
         # Send message options.
         self.text = None
         self.message_menu = None
-        self.disable_web_page_preview = False
+        self.disable_web_page_preview = None
 
         # Edit menu options.
         self.menu = None
@@ -63,79 +57,83 @@ class Card:
 
         self._session_initialization()
 
-    def handler(self) -> None:
-        """Card-related user actions handler.
+    def callback_handler(self) -> None:
+        """Card menu interaction handler.
         """
+        if self.session_data == "collection_cards":
+            self.cards()
 
-        if self.session_header == "CaRSe":
-            if self.session_data == "collection_cards":
-                self.cards()
+        elif self.session_data == "collection_learning":
+            self.collection_learning()
 
-            elif self.session_data == "collection_learning":
-                self.collection_learning()
+        elif self.session_data == "show_answer":
+            self.show_answer()
 
-            elif self.session_data == "show_answer":
-                self.show_answer()
+        elif self.session_data in ("correct_answer", "wrong_answer"):
+            if self.session_data == "correct_answer":
+                self._difficulty_calculation(True)
+            else:
+                self._difficulty_calculation(False)
 
-            elif self.session_data in ("correct_answer", "wrong_answer"):
-                if self.session_data == "correct_answer":
-                    self._difficulty_calculation(True)
-                else:
-                    self._difficulty_calculation(False)
+            self.collection_learning()
 
-                self.collection_learning()
+        elif self.session_data == "add_card":
+            self.new_card_session()
 
-            elif self.session_data == "add_card":
-                self.new_card_session()
+        elif "edit" in self.session_data:
+            if self.session_data == "edit_name":
+                self._edit_attribute_session("name")
 
-            elif "edit" in self.session_data:
-                if self.session_data == "edit_name":
-                    self._edit_attribute_session("name")
+            elif self.session_data == "edit_desc":
+                self._edit_attribute_session("description")
 
-                elif self.session_data == "edit_desc":
-                    self._edit_attribute_session("description")
-
-            elif "delete" in self.session_data:
-                if self.session_data == "confirm_delete":
-                    self.delete_confirmation()
-
-                else:
-                    self.delete_menu()
-
-            elif "level" in self.session_data:
-                self._change_level()
+        elif "delete" in self.session_data:
+            if self.session_data == "confirm_delete":
+                self.delete_confirmation()
 
             else:
-                self.info()
+                self.delete_menu()
 
-        elif self.session_header == "UsrCaRSe":
-            if self.session_data == "create":
-                self.new_card()
+        elif "level" in self.session_data:
+            self._change_level()
 
-            elif self.session_data in ("edit_name", "edit_description"):
-                self.change_attribute()
+        else:
+            self.info()
+
+    def session_handler(self) -> None:
+        """Card properties change handler.
+        """
+        if self.session_data == "create":
+            self.new_card()
+
+        elif self.session_data in ("edit_name", "edit_description"):
+            self.change_attribute()
 
     @Bot.edit_message
     @Bot.answer_callback_query
     def cards(self) -> None:
         """Show all user cards.
         """
-
         with Select("bot_users") as select:
             self.locale = select.user_attribute(self.user_id, "locale")
 
         with Select("bot_collections") as select:
             level = select.collection_attribute(
-                self.user_id, self.key, "page_level"
+                user_id=self.user_id,
+                key=self.key,
+                attribute="page_level"
             )
             collection_name = select.collection_attribute(
-                self.user_id, self.key, "name"
+                user_id=self.user_id,
+                key=self.key,
+                attribute="name"
             )
             cards_list = select.collection_cards(self.user_id, self.key)
 
         with Select("bot_messages") as select:
             self.title = select.bot_message(
-                "cards", self.locale
+                data="cards",
+                locale=self.locale
             ).format(collection_name)
 
         per_page = bot_settings["cards_per_page"]
@@ -155,11 +153,10 @@ class Card:
         buttons = CardTemplates.cards_template(self.locale, self.key)
         self.menu = (navigation + card_buttons + buttons)
 
-    @Bot.collection_existence_check
+    @Errors.collection_existence_check
     def collection_learning(self) -> None:
         """Issue a card for study to the user.
         """
-
         with Select("bot_users") as select:
             self.locale = select.user_attribute(self.user_id, "locale")
 
@@ -171,74 +168,87 @@ class Card:
         else:
             self.next_card()
 
-    @Bot.collection_existence_check
+    @Errors.collection_existence_check
     @Bot.edit_message
     @Bot.answer_callback_query
     def next_card(self) -> None:
         """Get the next card for training.
         """
-
         with Select("bot_collections") as select:
             collection_cards = select.collection_cards(self.user_id, self.key)
 
         weak_card = sorted(collection_cards, key=lambda x: x[8])[0]
         self.title = weak_card[4]
         self.menu = CardTemplates.learning_menu(
-            self.locale, self.key, weak_card[3]
+            locale=self.locale,
+            key=self.key,
+            card_key=weak_card[3]
         )
         self.parse_mode = "Markdown"
 
-    @Bot.card_and_collection_existence_check
+    @Errors.card_and_collection_existence_check
     @Bot.edit_message
     @Bot.answer_callback_query
     def show_answer(self) -> None:
         """Show card description.
         """
-
         with Select("bot_users") as select:
             self.locale = select.user_attribute(self.user_id, "locale")
 
         with Select("bot_collections") as select:
             self.title = Tools.text_appearance(
                 select.card_attribute(
-                    self.user_id, self.key, self.card_key, "description"
+                    user_id=self.user_id,
+                    key=self.key,
+                    card_key=self.card_key,
+                    attribute="description"
                 )
             )
 
         self.menu =  CardTemplates.answer_menu(
-            self.locale, self.key, self.card_key
+            locale=self.locale,
+            key=self.key,
+            card_key=self.card_key
         )
         self.parse_mode = "Markdown"
 
-    @Bot.card_and_collection_existence_check
+    @Errors.card_and_collection_existence_check
     @Bot.edit_message
     @Bot.answer_callback_query
     def info(self) -> None:
         """Card Information menu.
         """
-
         with Select("bot_users") as select:
             self.locale = select.user_attribute(self.user_id, "locale")
 
         with Select("bot_collections") as select:
             name = Tools.text_appearance(
                 select.card_attribute(
-                    self.user_id, self.key, self.card_key, "name"
+                    user_id=self.user_id,
+                    key=self.key,
+                    card_key=self.card_key,
+                    attribute="name"
                 )
             )
             description = Tools.text_appearance(
                 select.card_attribute(
-                    self.user_id, self.key, self.card_key, "description"
+                    user_id=self.user_id,
+                    key=self.key,
+                    card_key=self.card_key,
+                    attribute="description"
                 )
             )
 
         with Select("bot_messages") as select:
             self.title = select.bot_message(
-                "description_info", self.locale
+                data="description_info",
+                locale=self.locale
             ).format(name, description)
 
         self.menu = CardTemplates.info_template(
-            self.locale, self.key, self.card_key
+            locale=self.locale,
+            key=self.key,
+            card_key=self.card_key
         )
         self.parse_mode="MarkdownV2"
 
@@ -246,14 +256,15 @@ class Card:
     def new_card(self) -> None:
         """Create a new user card.
         """
-
         with Select("bot_users") as select:
             self.locale = select.user_attribute(self.user_id, "locale")
             cards = select.user_attribute(self.user_id, "cards")
 
         with Select("bot_collections") as select:
             collection_cards = select.collection_attribute(
-                self.user_id, self.key, "cards"
+                user_id=self.user_id,
+                key=self.key,
+                attribute="cards"
             )
 
         with Select("bot_messages") as select:
@@ -261,12 +272,12 @@ class Card:
 
         with Insert("bot_collections") as insert:
             insert.new_card(
-                self.user_id,
-                self.key,
-                self.card_key,
-                self.message_text,
-                "🚫",
-                int(datetime.now().timestamp())
+                user_id=self.user_id,
+                key=self.key,
+                card_key=self.card_key,
+                name=self.message_text,
+                description="🚫",
+                next_repetition_date=int(datetime.now().timestamp())
             )
 
         with Update("bot_users") as update:
@@ -275,11 +286,16 @@ class Card:
 
         with Update("bot_collections") as update:
             update.collection_attribute(
-                self.user_id, self.key, "cards", collection_cards + 1
+                user_id=self.user_id,
+                key=self.key,
+                attribute="cards",
+                value=collection_cards + 1
             )
 
         self.message_menu = CardTemplates.new_card_template(
-            self.key, self.card_key, self.message_text
+            key=self.key,
+            card_key=self.card_key,
+            name=self.message_text
         )
 
     @Bot.send_message
@@ -287,7 +303,6 @@ class Card:
     def new_card_session(self) -> None:
         """Change current user session to card creation session.
         """
-
         with Select("bot_users") as select:
             self.locale = select.user_attribute(self.user_id, "locale")
 
@@ -299,42 +314,47 @@ class Card:
         with Update("bot_users") as update:
             update.user_attribute(self.user_id, "session", session)
 
-    @Bot.card_and_collection_existence_check
+    @Errors.card_and_collection_existence_check
     @Bot.edit_message
     @Bot.answer_callback_query
     def delete_menu(self) -> None:
         """Delete card menu.
         """
-
         with Select("bot_users") as select:
             self.locale = select.user_attribute(self.user_id, "locale")
 
         with Select("bot_messages") as select:
             self.title = select.bot_message(
-                "card_delete_confirm", self.locale
+                data="card_delete_confirm",
+                locale=self.locale
             )
 
         self.menu = CardTemplates.delete_menu_template(
-            self.locale, self.key, self.card_key
+            locale=self.locale,
+            key=self.key,
+            card_key=self.card_key
         )
 
-    @Bot.card_and_collection_existence_check
+    @Errors.card_and_collection_existence_check
     @Bot.edit_message
     @Bot.answer_callback_query
     def delete_confirmation(self) -> None:
         """Card deletion confirmation menu.
         """
-
         with Select("bot_users") as select:
             self.locale = select.user_attribute(self.user_id, "locale")
             cards = select.user_attribute(self.user_id, "cards")
 
         with Select("bot_collections") as select:
             collection_cards = select.collection_attribute(
-                self.user_id, self.key, "cards"
+                user_id=self.user_id,
+                key=self.key,
+                attribute="cards"
             )
             page_level = select.collection_attribute(
-                self.user_id, self.key, "page_level"
+                user_id=self.user_id,
+                key=self.key,
+                attribute="page_level"
             )
 
         with Delete("bot_collections") as delete:
@@ -346,27 +366,33 @@ class Card:
         with Update("bot_collections") as update:
             if collection_cards >= 1:
                 update.collection_attribute(
-                    self.user_id, self.key, "cards", collection_cards - 1
+                    user_id=self.user_id,
+                    key=self.key,
+                    attribute="cards",
+                    value=collection_cards - 1
                 )
             if page_level >= 1:
                 update.collection_attribute(
-                    self.user_id, self.key, "page_level", page_level - 1
+                    user_id=self.user_id,
+                    key=self.key,
+                    attribute="page_level",
+                    value=page_level - 1
                 )
 
         with Select("bot_messages") as select:
             self.title = select.bot_message("card_deleted", self.locale)
 
         self.menu = CardTemplates.delete_confirmation_template(
-            self.locale, self.key
+            locale=self.locale,
+            key=self.key
         )
 
-    @Bot.card_and_collection_existence_check
+    @Errors.card_and_collection_existence_check
     @Bot.edit_message
     @Bot.send_message
     def change_attribute(self) -> None:
         """Change any attribute of the card.
         """
-
         attribute = self.session_data.split("_")[1]
 
         with Select("bot_users") as select:
@@ -375,11 +401,11 @@ class Card:
 
         with Update("bot_collections") as update:
             update.card_attribute(
-                self.user_id,
-                self.key,
-                self.card_key,
-                attribute,
-                self.message_text
+                user_id=self.user_id,
+                key=self.key,
+                card_key=self.card_key,
+                attribute=attribute,
+                value=self.message_text
             )
 
         with Update("bot_users") as update:
@@ -387,35 +413,50 @@ class Card:
 
         with Select("bot_messages") as select:
             self.text = select.bot_message(
-                f"card_{attribute}_changed", self.locale
+                data=f"card_{attribute}_changed",
+                locale=self.locale
             )
 
         with Select("bot_collections") as select:
             name = Tools.text_appearance(
                 select.card_attribute(
-                    self.user_id, self.key, self.card_key, "name"
+                    user_id=self.user_id,
+                    key=self.key,
+                    card_key=self.card_key,
+                    attribute="name"
                 )
             )
             description = Tools.text_appearance(
                 select.card_attribute(
-                    self.user_id, self.key, self.card_key, "description"
+                    user_id=self.user_id,
+                    key=self.key,
+                    card_key=self.card_key,
+                    attribute="description"
                 )
             )
 
         with Select("bot_messages") as select:
             self.title = select.bot_message(
-                "description_info", self.locale
+                data="description_info",
+                locale=self.locale
             ).format(name, description)
 
         self.menu = CardTemplates.info_template(
-            self.locale, self.key, self.card_key
+            locale=self.locale,
+            key=self.key,
+            card_key=self.card_key
         )
         self.parse_mode = "MarkdownV2"
 
-    @Bot.card_and_collection_existence_check
+    @Errors.card_and_collection_existence_check
     @Bot.send_message
     @Bot.answer_callback_query
-    def _edit_attribute_session(self, attribute) -> None:
+    def _edit_attribute_session(self, attribute: str) -> None:
+        """Write a change to a specific card attribute in the current session.
+
+        Args:
+            attribute: Name, description or other attribute to be changed.
+        """
         key = f"UsrCaRSe/edit_{attribute}/{self.key}/{self.card_key}"
 
         with Select("bot_users") as select:
@@ -423,7 +464,8 @@ class Card:
 
         with Select("bot_messages") as select:
             self.text = select.bot_message(
-                f"edit_card_{attribute}", self.locale
+                data=f"edit_card_{attribute}",
+                locale=self.locale
             )
 
         with Update("bot_users") as update:
@@ -431,30 +473,43 @@ class Card:
             update.user_attribute(self.user_id, "menu_id", self.message_id)
 
     def _change_level(self) -> None:
+        """Change the layer containing the collection cards.
+        """
         with Update("bot_collections") as update:
             update.collection_attribute(
-                self.user_id,
-                self.key,
-                "page_level",
-                int(self.session_data[-2:])
+                user_id=self.user_id,
+                key=self.key,
+                attribute="page_level",
+                value=int(self.session_data[-2:])
             )
 
         self.cards()
 
-    @Bot.card_and_collection_existence_check
-    def _difficulty_calculation(self, answer: bool) -> None:
+    @Errors.card_and_collection_existence_check
+    def _difficulty_calculation(self, correct_answer: bool) -> None:
+        """Change the difficulty of the card based on the user's response.
+        """
         with Select("bot_collections") as select:
             difficulty = select.card_attribute(
-                self.user_id, self.key, self.card_key, "difficulty"
+                user_id=self.user_id,
+                key=self.key,
+                card_key=self.card_key,
+                attribute="difficulty"
             )
             repetition = select.card_attribute(
-                self.user_id, self.key, self.card_key, "repetition"
+                user_id=self.user_id,
+                key=self.key,
+                card_key=self.card_key,
+                attribute="repetition"
             )
             easy_factor = select.card_attribute(
-                self.user_id, self.key, self.card_key, "easy_factor"
+                user_id=self.user_id,
+                key=self.key,
+                card_key=self.card_key,
+                attribute="easy_factor"
             )
 
-        if answer:
+        if correct_answer:
             if difficulty < 5:
                 difficulty += 1
         else:
@@ -462,7 +517,9 @@ class Card:
                 difficulty -= 1
 
         next_repetition_date, easy_factor = Tools.memorization_algorithm(
-            repetition, difficulty, easy_factor
+            repetition=repetition,
+            difficulty=difficulty,
+            easy_factor=easy_factor
         )
         current_time = int(datetime.now().timestamp())
         next_repetition_date += current_time
@@ -470,20 +527,32 @@ class Card:
 
         with Update("bot_collections") as update:
             update.card_attribute(
-                self.user_id, self.key, self.card_key,
-                "difficulty", difficulty
+                user_id=self.user_id,
+                key=self.key,
+                card_key=self.card_key,
+                attribute="difficulty",
+                value=difficulty
             )
             update.card_attribute(
-                self.user_id, self.key, self.card_key,
-                "repetition", repetition + 1
+                user_id=self.user_id,
+                key=self.key,
+                card_key=self.card_key,
+                attribute="repetition",
+                value=repetition + 1
             )
             update.card_attribute(
-                self.user_id, self.key, self.card_key,
-                "next_repetition_date", next_repetition_date
+                user_id=self.user_id,
+                key=self.key,
+                card_key=self.card_key,
+                attribute="next_repetition_date",
+                value=next_repetition_date
             )
             update.card_attribute(
-                self.user_id, self.key, self.card_key,
-                "easy_factor", easy_factor
+                user_id=self.user_id,
+                key=self.key,
+                card_key=self.card_key,
+                attribute="easy_factor",
+                value=easy_factor
             )
 
     def _session_initialization(self) -> None:

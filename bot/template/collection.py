@@ -1,21 +1,16 @@
 """
-    Implementation of tools for working with the ``Collection`` object.
+    Implementation of tools for working with the `Collection` object.
 """
+from typing import Any, Optional
 
-from typing import Any
-from typing import Optional
-
-from ..tools.helpers import Bot
-from ..tools.helpers import Tools
-from ..tools.database import Select
-from ..tools.database import Insert
-from ..tools.database import Update
-from ..tools.database import Delete
-from ..shortcuts import CollectionTemplates
 from ..config import bot_settings
+from ..shortcuts import CollectionTemplates
+from ..tools.helpers import Bot, Tools, Errors
+from ..tools.database import Select, Insert, Update, Delete
+
 
 class Collection:
-    """Class defining the ``Collection`` object.
+    """Class defining the `Collection` object.
 
     Attributes:
         message: An object containing all information
@@ -23,7 +18,6 @@ class Collection:
         callback_query: An object containing
                         all information about the user's query.
     """
-
     def __init__(
         self,
         message: Optional[dict[str, Any]] = None,
@@ -60,59 +54,58 @@ class Collection:
 
         self._session_initialization()
 
-    def handler(self) -> None:
-        """Collection-related user actions handler.
+    def callback_handler(self) -> None:
+        """Collection menu interaction handler.
         """
+        if self.session_data == "public_key":
+            self.public_key()
 
-        if self.session_header == "CoLSe":
-            if self.session_data == "public_key":
-                self.public_key()
+        elif "edit" in self.session_data:
+            if self.session_data == "edit_name":
+                self._edit_attribute_session("name")
 
-            elif "edit" in self.session_data:
-                if self.session_data == "edit_name":
-                    self._edit_attribute_session("name")
-
-                elif self.session_data == "edit_desc":
-                    self._edit_attribute_session("description")
-
-                else:
-                    self.edit_menu()
-
-            elif "delete" in self.session_data:
-                if self.session_data == "confirm_delete":
-                    self.delete_confirmation()
-
-                else:
-                    self.delete_menu()
-
-            elif self.session_data == "collections":
-                self.collections()
-
-            elif self.session_data == "add_collection":
-                self.add_collection_session()
-
-            elif "level" in self.session_data:
-                self._change_level()
+            elif self.session_data == "edit_desc":
+                self._edit_attribute_session("description")
 
             else:
-                self.info()
+                self.edit_menu()
 
-        elif self.session_header == "UsrCoLSe":
-            if self.session_data == "create":
-                if Tools.collection_search(self.message_text):
-                    self.copy_collection()
-                else:
-                    self.new_collection()
+        elif "delete" in self.session_data:
+            if self.session_data == "confirm_delete":
+                self.delete_confirmation()
 
-            elif self.session_data in ("edit_name", "edit_description"):
-                self.change_attribute()
+            else:
+                self.delete_menu()
+
+        elif self.session_data == "collections":
+            self.collections()
+
+        elif self.session_data == "add_collection":
+            self.add_collection_session()
+
+        elif "level" in self.session_data:
+            self._change_level()
+
+        else:
+            self.info()
+
+    def session_handler(self) -> None:
+        """Collection properties change handler.
+        """
+        if self.session_data == "create":
+            if Tools.collection_search(self.message_text):
+                self.copy_collection()
+            else:
+                self.new_collection()
+
+        elif self.session_data in ("edit_name", "edit_description"):
+            self.change_attribute()
 
     @Bot.edit_message
     @Bot.answer_callback_query
     def collections(self) -> None:
         """Show all user collections.
         """
-
         with Select("bot_users") as select:
             self.locale = select.user_attribute(self.user_id, "locale")
             level = select.user_attribute(self.user_id, "page_level")
@@ -144,7 +137,6 @@ class Collection:
     def new_collection(self) -> None:
         """Create a new user collection.
         """
-
         with Select("bot_users") as select:
             self.locale = select.user_attribute(self.user_id, "locale")
             collections = select.user_attribute(self.user_id, "collections")
@@ -158,18 +150,20 @@ class Collection:
         with Update("bot_users") as update:
             update.user_attribute(self.user_id, "session", None)
             update.user_attribute(
-                self.user_id, "collections", collections + 1
+                user_id=self.user_id,
+                attribute="collections",
+                value=collections + 1
             )
 
         self.message_menu = CollectionTemplates.new_collection_template(
-            self.key, self.message_text
+            key=self.key,
+            name=self.message_text
         )
 
     @Bot.send_message
     def copy_collection(self) -> None:
         """Copy another user's collection.
         """
-
         with Select("bot_users") as select:
             self.locale = select.user_attribute(self.user_id, "locale")
             collections = select.user_attribute(self.user_id, "collections")
@@ -184,32 +178,40 @@ class Collection:
 
         with Select("bot_collections") as select:
             new_cards = select.collection_attribute(
-                self.user_id, new_key, "cards"
+                user_id=self.user_id,
+                key=new_key,
+                attribute="cards"
             )
             name = select.collection_attribute(
-                self.user_id, new_key, "name"
+                user_id=self.user_id,
+                key=new_key,
+                attribute="name"
             )
 
         with Update("bot_users") as update:
             update.user_attribute(self.user_id, "session", None)
             update.user_attribute(
-                self.user_id, "cards", cards + new_cards
+                user_id=self.user_id,
+                attribute="cards",
+                value=cards + new_cards
             )
             update.user_attribute(
-                self.user_id, "collections", collections + 1
+                user_id=self.user_id,
+                attribute="collections",
+                value=collections + 1
             )
 
         self.message_menu = CollectionTemplates.new_collection_template(
-            new_key, name
+            key=new_key,
+            name=name
         )
 
-    @Bot.collection_existence_check
+    @Errors.collection_existence_check
     @Bot.edit_message
     @Bot.answer_callback_query
     def info(self) -> None:
-        """Collection Information menu.
+        """Show collection information menu.
         """
-
         with Select("bot_users") as select:
             self.locale = select.user_attribute(self.user_id, "locale")
 
@@ -219,50 +221,54 @@ class Collection:
             )
             description = Tools.text_appearance(
                 select.collection_attribute(
-                    self.user_id, self.key, "description"
+                    user_id=self.user_id,
+                    key=self.key,
+                    attribute="description"
                 )
             )
 
         with Select("bot_messages") as select:
             if description:
                 self.title = select.bot_message(
-                    "description_info", self.locale
+                    data="description_info",
+                    locale=self.locale
                 ).format(name, description)
             else:
                 self.title = select.bot_message(
-                    "collection_info", self.locale
+                    data="collection_info",
+                    locale=self.locale
                 ).format(name)
 
         self.menu = CollectionTemplates.info_template(self.locale, self.key)
         self.parse_mode = "MarkdownV2"
 
-    @Bot.collection_existence_check
+    @Errors.collection_existence_check
     @Bot.edit_message
     @Bot.answer_callback_query
     def public_key(self) -> None:
         """Collection Public Key menu.
         """
-
         with Select("bot_users") as select:
             self.locale = select.user_attribute(self.user_id, "locale")
 
         with Select("bot_messages") as select:
             self.title = select.bot_message(
-                "public_key_text", self.locale
+                data="public_key_text",
+                locale=self.locale
             ).format(self.key)
 
         self.menu = CollectionTemplates.public_key_template(
-            self.locale, self.key
+            locale=self.locale,
+            key=self.key
         )
         self.parse_mode = "MarkdownV2"
 
-    @Bot.collection_existence_check
+    @Errors.collection_existence_check
     @Bot.edit_message
     @Bot.answer_callback_query
     def edit_menu(self) -> None:
         """Collection Edit menu.
         """
-
         with Select("bot_users") as select:
             self.locale = select.user_attribute(self.user_id, "locale")
 
@@ -272,46 +278,50 @@ class Collection:
             )
             description = Tools.text_appearance(
                 select.collection_attribute(
-                    self.user_id, self.key, "description"
+                    user_id=self.user_id,
+                    key=self.key,
+                    attribute="description"
                 )
             )
 
         with Select("bot_messages") as select:
             self.title = select.bot_message(
-                "description_info", self.locale
+                data="description_info",
+                locale=self.locale
             ).format(name, description)
 
         self.menu = CollectionTemplates.edit_menu_template(
-            self.locale, self.key
+            locale=self.locale,
+            key=self.key
         )
         self.parse_mode = "MarkdownV2"
 
-    @Bot.collection_existence_check
+    @Errors.collection_existence_check
     @Bot.edit_message
     @Bot.answer_callback_query
     def delete_menu(self) -> None:
         """Delete collection menu.
         """
-
         with Select("bot_users") as select:
             self.locale = select.user_attribute(self.user_id, "locale")
 
         with Select("bot_messages") as select:
             self.title = select.bot_message(
-                "delete_confirmation", self.locale
+                data="delete_confirmation",
+                locale=self.locale
             )
 
         self.menu = CollectionTemplates.delete_menu_template(
-            self.locale, self.key
+            locale=self.locale,
+            key=self.key
         )
 
-    @Bot.collection_existence_check
+    @Errors.collection_existence_check
     @Bot.edit_message
     @Bot.answer_callback_query
     def delete_confirmation(self) -> None:
         """Collection deletion confirmation menu.
         """
-
         with Select("bot_users") as select:
             self.locale = select.user_attribute(self.user_id, "locale")
             collections = select.user_attribute(self.user_id, "collections")
@@ -320,7 +330,9 @@ class Collection:
 
         with Select("bot_collections") as select:
             collection_cards = select.collection_attribute(
-                self.user_id, self.key, "cards"
+                user_id=self.user_id,
+                key=self.key,
+                attribute="cards"
             )
 
         with Delete("bot_collections") as delete:
@@ -328,21 +340,27 @@ class Collection:
 
         with Update("bot_users") as update:
             update.user_attribute(
-                self.user_id, "collections", collections - 1
+                user_id=self.user_id,
+                attribute="collections",
+                value=collections - 1
             )
             update.user_attribute(
-                self.user_id, "cards", cards - collection_cards
+                user_id=self.user_id,
+                attribute="cards",
+                value=cards - collection_cards
             )
             if page_level >= 1:
                 update.user_attribute(
-                    self.user_id, "page_level", page_level - 1
+                    user_id=self.user_id,
+                    attribute="page_level",
+                    value=page_level - 1
                 )
 
         with Select("bot_messages") as select:
             self.title = select.bot_message("collection_deleted", self.locale)
 
         self.menu = CollectionTemplates.delete_confirmation_template(
-            self.locale
+            locale=self.locale
         )
 
     @Bot.send_message
@@ -350,7 +368,6 @@ class Collection:
     def add_collection_session(self) -> None:
         """Change current user session to collection creation session.
         """
-
         with Select("bot_users") as select:
             self.locale = select.user_attribute(self.user_id, "locale")
 
@@ -362,13 +379,12 @@ class Collection:
         with Update("bot_users") as update:
             update.user_attribute(self.user_id, "session", session)
 
-    @Bot.collection_existence_check
+    @Errors.collection_existence_check
     @Bot.edit_message
     @Bot.send_message
     def change_attribute(self) -> None:
         """Change any attribute of the collection.
         """
-
         attribute = self.session_data.split("_")[1]
 
         with Select("bot_users") as select:
@@ -377,7 +393,10 @@ class Collection:
 
         with Update("bot_collections") as update:
             update.collection_attribute(
-                self.user_id, self.key, attribute, self.message_text
+                user_id=self.user_id,
+                key=self.key,
+                attribute=attribute,
+                value=self.message_text
             )
 
         with Update("bot_users") as update:
@@ -385,7 +404,8 @@ class Collection:
 
         with Select("bot_messages") as select:
             self.text = select.bot_message(
-                f"collection_{attribute}_changed", self.locale
+                data=f"collection_{attribute}_changed",
+                locale=self.locale
             )
 
         with Select("bot_collections") as select:
@@ -394,24 +414,34 @@ class Collection:
             )
             description = Tools.text_appearance(
                 select.collection_attribute(
-                    self.user_id, self.key, "description"
+                    user_id=self.user_id,
+                    key=self.key,
+                    attribute="description"
                 )
             )
 
         with Select("bot_messages") as select:
             self.title = select.bot_message(
-                "description_info", self.locale
+                data="description_info",
+                locale=self.locale
             ).format(name, description)
 
         self.menu = CollectionTemplates.edit_menu_template(
-            self.locale, self.key
+            locale=self.locale,
+            key=self.key
         )
         self.parse_mode = "MarkdownV2"
 
-    @Bot.collection_existence_check
+    @Errors.collection_existence_check
     @Bot.send_message
     @Bot.answer_callback_query
-    def _edit_attribute_session(self, attribute):
+    def _edit_attribute_session(self, attribute: str) -> None:
+        """Write a change to a specific collection attribute
+        in the current session.
+
+        Args:
+            attribute: Name, description or other attribute to be changed.
+        """
         key = f"UsrCoLSe/edit_{attribute}/{self.key}"
 
         with Select("bot_users") as select:
@@ -419,24 +449,27 @@ class Collection:
 
         with Select("bot_messages") as select:
             self.text = select.bot_message(
-                f"edit_collection_{attribute}", self.locale
+                data=f"edit_collection_{attribute}",
+                locale=self.locale
             )
 
         with Update("bot_users") as update:
             update.user_attribute(self.user_id, "session", key)
             update.user_attribute(self.user_id, "menu_id", self.message_id)
 
-    def _change_level(self):
+    def _change_level(self) -> None:
+        """Change the layer containing the user's collections.
+        """
         with Update("bot_users") as update:
             update.user_attribute(
-                self.user_id,
-                "page_level",
-                int(self.data[-2:])
+                user_id=self.user_id,
+                attribute="page_level",
+                value=int(self.data[-2:])
             )
 
         self.collections()
 
-    def _session_initialization(self):
+    def _session_initialization(self) -> None:
         if self.message:
             self.user_id = self.message["chat"]["id"]
             self.message_text = self.message["text"]

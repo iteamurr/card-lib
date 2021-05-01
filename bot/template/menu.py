@@ -1,23 +1,17 @@
 """
-    Implementation of tools for working with the ``Menu`` object.
+    Implementation of tools for working with the `Menu` object.
 """
+from typing import Any, Callable
 
-from typing import Any
-from typing import Callable
-
-from ..tools.helpers import Bot
-from ..tools.helpers import Tools
-from ..tools.database import Select
-from ..tools.database import Update
-from ..shortcuts import MenuTemplates
-from ..shortcuts import CollectionTemplates
 from ..config import bot_settings
+from ..tools.helpers import Bot, Tools
+from ..tools.database import Select, Update
+from ..shortcuts import MenuTemplates, CollectionTemplates
 
 
 class Menu:
-    """Class defining the ``Menu`` object.
+    """Class defining the `Menu` object.
     """
-
     def __init__(self) -> None:
         # Variables responsible for callback query.
         self.callback_query = None
@@ -50,7 +44,6 @@ class Menu:
         Args:
             menu: Menu to be used as template.
         """
-
         self.selected_menu = menu
 
     @Bot.send_message
@@ -60,7 +53,6 @@ class Menu:
         Args:
             user_id: Unique identifier of the target user.
         """
-
         self.user_id = user_id
         self.selected_menu()
         self.message_menu = self.menu
@@ -74,7 +66,6 @@ class Menu:
             callback_query: An object containing
                             all information about the user's query.
         """
-
         self.callback_query = callback_query
         self._callback_query_init()
         self.selected_menu()
@@ -83,7 +74,6 @@ class Menu:
     def private_office(self) -> None:
         """User private office template.
         """
-
         with Select("bot_users") as select:
             self.locale = select.user_attribute(self.user_id, "locale")
 
@@ -95,7 +85,6 @@ class Menu:
     def start(self) -> None:
         """User start text template.
         """
-
         with Select("bot_users") as select:
             self.locale = select.user_attribute(self.user_id, "locale")
 
@@ -110,7 +99,6 @@ class Menu:
     def settings(self) -> None:
         """User settings template.
         """
-
         with Select("bot_users") as select:
             self.locale = select.user_attribute(self.user_id, "locale")
 
@@ -122,7 +110,6 @@ class Menu:
     def locale_settings(self) -> None:
         """User locale settings template.
         """
-
         locale_list = {"en": "English", "ru": "Русский"}
 
         with Select("bot_users") as select:
@@ -130,7 +117,8 @@ class Menu:
 
         with Select("bot_messages") as select:
             self.text = select.bot_message(
-                "current_language", self.locale
+                data="current_language",
+                locale=self.locale
             ).format(locale_list[self.locale])
 
         self.menu = MenuTemplates.locale_settings_template(self.locale)
@@ -139,7 +127,6 @@ class Menu:
     def collections(self) -> None:
         """User collections template.
         """
-
         with Select("bot_users") as select:
             self.locale = select.user_attribute(self.user_id, "locale")
             level = select.user_attribute(self.user_id, "page_level")
@@ -170,7 +157,6 @@ class Menu:
     def cancel(self) -> None:
         """Cancel current operation.
         """
-
         with Update("bot_users") as update:
             update.user_attribute(self.user_id, "session", None)
 
@@ -180,7 +166,7 @@ class Menu:
         with Select("bot_messages") as select:
             self.text = select.bot_message("cancel", self.locale)
 
-    def _callback_query_init(self):
+    def _callback_query_init(self) -> None:
         self.callback_id = self.callback_query["id"]
         self.user_id = self.callback_query["from"]["id"]
         self.message_id = self.callback_query["message"]["message_id"]

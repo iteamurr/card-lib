@@ -1,15 +1,12 @@
 """
-    Module with menu templates and frequently used functions.
+    Implementation of bot menu templates.
 """
-
-from .tools.helpers import Tools
-from .tools.helpers import MenuTemplate
+from .tools.helpers import Tools, MenuTemplate
 
 
 class CollectionTemplates:
     """Collection menu templates.
     """
-
     @staticmethod
     def info_template(locale: str, key: str) -> MenuTemplate:
         """Info menu template.
@@ -23,7 +20,6 @@ class CollectionTemplates:
         Returns:
             template: Info menu template.
         """
-
         template = Tools.menu_template(
             Tools.layer_template(
                 Tools.identified_button_template(
@@ -71,7 +67,6 @@ class CollectionTemplates:
         Returns:
             template: Collections menu template.
         """
-
         template = Tools.menu_template(
             Tools.layer_template(
                 Tools.identified_button_template(
@@ -98,7 +93,6 @@ class CollectionTemplates:
         Returns:
             template: New Collection message template.
         """
-
         template = Tools.menu_template(
             Tools.layer_template(
                 Tools.button_template(
@@ -122,7 +116,6 @@ class CollectionTemplates:
         Returns:
             template: Public Key menu template.
         """
-
         template = Tools.menu_template(
             Tools.layer_template(
                 Tools.identified_button_template(
@@ -147,7 +140,6 @@ class CollectionTemplates:
         Returns:
             template: Edit Menu template.
         """
-
         template = Tools.menu_template(
             Tools.layer_template(
                 Tools.identified_button_template(
@@ -192,7 +184,6 @@ class CollectionTemplates:
         Returns:
             template: Delete Menu template.
         """
-
         template = Tools.menu_template(
             Tools.layer_template(
                 Tools.identified_button_template(
@@ -220,7 +211,6 @@ class CollectionTemplates:
         Returns:
             template: Delete Confirmation menu template.
         """
-
         template = Tools.menu_template(
             Tools.layer_template(
                 Tools.identified_button_template(
@@ -236,7 +226,6 @@ class CollectionTemplates:
 class CardTemplates:
     """Card menu templates.
     """
-
     @staticmethod
     def info_template(locale: str, key: str, card_key: str) -> MenuTemplate:
         """Card info menu template.
@@ -251,7 +240,6 @@ class CardTemplates:
         Returns:
             template: Card info menu template.
         """
-
         template = Tools.menu_template(
             Tools.layer_template(
                 Tools.identified_button_template(
@@ -296,7 +284,6 @@ class CardTemplates:
         Returns:
             template: Cards menu template.
         """
-
         template = Tools.menu_template(
             Tools.layer_template(
                 Tools.identified_button_template(
@@ -324,7 +311,6 @@ class CardTemplates:
         Returns:
             template: New Card menu template.
         """
-
         template = Tools.menu_template(
             Tools.layer_template(
                 Tools.button_template(
@@ -353,7 +339,6 @@ class CardTemplates:
         Returns:
             template: Delete Menu template.
         """
-
         template = Tools.menu_template(
             Tools.layer_template(
                 Tools.identified_button_template(
@@ -382,7 +367,6 @@ class CardTemplates:
         Returns:
             template: Delete Confirmation menu template.
         """
-
         template = Tools.menu_template(
             Tools.layer_template(
                 Tools.identified_button_template(
@@ -409,7 +393,6 @@ class CardTemplates:
             template: Menu template with a choice
                       of correctness of the answer.
         """
-
         template = Tools.menu_template(
             Tools.layer_template(
                 Tools.identified_button_template(
@@ -439,7 +422,6 @@ class CardTemplates:
         Returns:
             template: Study card menu template.
         """
-
         template = Tools.menu_template(
             Tools.layer_template(
                 Tools.identified_button_template(
@@ -459,7 +441,6 @@ class CardTemplates:
 class MenuTemplates:
     """Main menu templates
     """
-
     @staticmethod
     def private_office_template(locale: str) -> MenuTemplate:
         """Private Office menu template.
@@ -471,7 +452,6 @@ class MenuTemplates:
         Returns:
             template: Private Office menu template.
         """
-
         template = Tools.menu_template(
             Tools.layer_template(
                 Tools.identified_button_template(
@@ -498,7 +478,6 @@ class MenuTemplates:
         Returns:
             template: Settings menu template.
         """
-
         template = Tools.menu_template(
             Tools.layer_template(
                 Tools.identified_button_template(
@@ -527,7 +506,6 @@ class MenuTemplates:
         Returns:
             template: Locale Settings menu template.
         """
-
         template = Tools.menu_template(
             Tools.layer_template(
                 Tools.identified_button_template(

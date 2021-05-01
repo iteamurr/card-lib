@@ -1,7 +1,6 @@
 """
-    Implementing user action handlers
+    Implementation handlers for basic user actions.
 """
-
 from typing import Any
 
 from ..tools.helpers import Tools
@@ -17,7 +16,6 @@ class CommandHandler:
         message: An object containing
                  all information about the user's message.
     """
-
     def __init__(self, message: dict[str, Any]) -> None:
         # The menu that will be sent to the user.
         self.menu = None
@@ -33,7 +31,6 @@ class CommandHandler:
     def handler(self) -> None:
         """Handler defines the command and sends the menu.
         """
-
         self.menu = Menu()
 
         if "/start" in self.command:
@@ -90,7 +87,6 @@ class CallbackQueryHandler:
         callback_query: An object containing
                         all information about the user's query.
     """
-
     def __init__(self, callback_query: dict[str, Any]) -> None:
         # Menu that will replace the current user menu.
         self.menu = None
@@ -109,7 +105,6 @@ class CallbackQueryHandler:
     def handler(self) -> None:
         """Handler delegates control to other processes or switches menu.
         """
-
         if self.session_header == "CaRSe":
             self._card_handler()
 
@@ -146,11 +141,11 @@ class CallbackQueryHandler:
 
     def _card_handler(self):
         card = Card(callback_query=self.callback_query)
-        card.handler()
+        card.callback_handler()
 
     def _collection_handler(self):
         collection = Collection(callback_query=self.callback_query)
-        collection.handler()
+        collection.callback_handler()
 
     def _select_private_office_menu(self):
         self.menu.select(self.menu.private_office)
@@ -175,7 +170,6 @@ class SessionHandler:
         message: An object containing all information
                  about the user's message.
     """
-
     def __init__(self, message: dict[str, Any]) -> None:
         self.message = message
         self.session_header = None
@@ -204,8 +198,8 @@ class SessionHandler:
 
     def _collection_handler(self):
         collection = Collection(message=self.message)
-        collection.handler()
+        collection.session_handler()
 
     def _card_handler(self):
         card = Card(message=self.message)
-        card.handler()
+        card.session_handler()

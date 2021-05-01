@@ -1,23 +1,19 @@
 """
-    Module responsible for bot settings.
+    Implementation of the initial settings of the bot.
 """
-
 import requests
 
-from .database import Insert
-from .database import CreateTable
+from .database import Insert, CreateTable
 from ..config import telegram
 
 
 class SettingsPanel:
     """Bot settings panel.
     """
-
     @staticmethod
     def first_launch_of_bot() -> None:
         """Configure the bot for the first launch.
         """
-
         with CreateTable("bot_messages") as create:
             create.bot_messages()
 
@@ -40,7 +36,6 @@ class SettingsPanel:
         Args:
             web: The address of the site where the bot is running.
         """
-
         url = telegram["url"].format(telegram["token"], "setWebhook")
         body = {"url": f"{web}/{telegram['token']}"}
 
@@ -53,7 +48,6 @@ class SettingsPanel:
         Args:
             web: The address of the site where the bot is running.
         """
-
         url = telegram["url"].format(telegram["token"], "deleteWebhook")
         body = {"url": f"{web}/{telegram['token']}"}
 
@@ -63,7 +57,6 @@ class SettingsPanel:
     def en_insert_messages() -> None:
         """Insert messages in English to the bot phrases database
         """
-
         with Insert("bot_messages") as ins:
             # Main
             ins.new_bot_message("start",
@@ -220,12 +213,10 @@ class SettingsPanel:
                                 "An error occured, please try again later",
                                 "en")
 
-
     @staticmethod
     def ru_insert_messages() -> None:
         """Writing messages in Russian to the bot phrases database.
         """
-
         with Insert("bot_messages") as ins:
             # Main
             ins.new_bot_message("start",

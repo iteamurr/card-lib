@@ -1,10 +1,7 @@
 """
     Bot launch module.
 """
-
-from flask import Flask
-from flask import request
-from flask import jsonify
+from flask import Flask, request, jsonify
 
 from bot.config import telegram
 from bot.tools.handlers import CommandHandler
@@ -18,7 +15,6 @@ app = Flask(__name__)
 def get_updates():
     """Get user action.
     """
-
     if request.method == "POST":
         updates = request.get_json()
 
