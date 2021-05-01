@@ -5,10 +5,13 @@
 </p>
 <p align="center">
   <a href="https://t.me/card_lib_bot">
-    <img alt="CardLib" src="https://img.shields.io/badge/link-Telegram-blue">
+    <img alt="Telegram link" src="https://img.shields.io/badge/link-Telegram-blue">
   </a>
   <a href="https://github.com/iteamurr/card-lib/blob/main/LICENSE">
-    <img alt="GitHub" src="https://img.shields.io/github/license/iteamurr/card-lib">
+    <img alt="GitHub license" src="https://img.shields.io/github/license/iteamurr/card-lib">
+  </a>
+  <a href="https://github.com/iteamurr/card-lib/releases/tag/v1.0">
+    <img alt="GitHub release" src="https://img.shields.io/github/v/release/iteamurr/card-lib">
   </a>
 </p>
 <h2>About Card Lib</h2>
