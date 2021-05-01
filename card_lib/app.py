@@ -7,11 +7,7 @@ from .bot.config import TELEGRAM_TOKEN
 from .bot.tools.handlers import CommandHandler
 from .bot.tools.handlers import SessionHandler
 from .bot.tools.handlers import CallbackQueryHandler
-from .bot.tools.settings import SettingsPanel
 
-SettingsPanel.first_launch_of_bot()
-SettingsPanel.ru_insert_messages()
-SettingsPanel.en_insert_messages()
 app = Flask(__name__)
 
 @app.route(f"/{TELEGRAM_TOKEN}", methods=["POST", "GET"])
