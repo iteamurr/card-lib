@@ -7,9 +7,9 @@ from types import TracebackType
 import psycopg2
 from psycopg2 import sql
 
-from ..config import database
+from ..config import POSTGRESQL_DATABASE_URL, COLLECTIONS_DATABASE
 
-
+# pylint: disable=unsubscriptable-object
 class CreateTable:
     """Class responsible for creating tables in the database.
 
@@ -24,11 +24,7 @@ class CreateTable:
 
     def __enter__(self) -> CreateTable:
         self._connection = psycopg2.connect(
-            dbname=self.db_name,
-            user=database["user"],
-            password=database["passwd"],
-            host=database["host"],
-            port=database["port"]
+            POSTGRESQL_DATABASE_URL, sslmode='require'
         )
         self._cursor = self._connection.cursor()
 
@@ -128,11 +124,7 @@ class Insert:
 
     def __enter__(self) -> Insert:
         self._connection = psycopg2.connect(
-            dbname=self._db_name,
-            user=database["user"],
-            password=database["passwd"],
-            host=database["host"],
-            port=database["port"]
+            POSTGRESQL_DATABASE_URL, sslmode='require'
         )
         self._cursor = self._connection.cursor()
 
@@ -277,10 +269,10 @@ class Insert:
         )
         info = self._cursor.fetchone()
 
-        with Insert("bot_collections") as insert:
+        with Insert(COLLECTIONS_DATABASE) as insert:
             insert.new_collection(user_id, new_key, f"{info[3]} - Copy")
 
-        with Update("bot_collections") as update:
+        with Update(COLLECTIONS_DATABASE) as update:
             update.collection_attribute(
                 user_id=user_id,
                 key=new_key,
@@ -295,7 +287,7 @@ class Insert:
         )
         cards = self._cursor.fetchall()
 
-        with Insert("bot_collections") as insert:
+        with Insert(COLLECTIONS_DATABASE) as insert:
             for card in cards:
                 insert.new_card(
                     user_id=user_id,
@@ -321,11 +313,7 @@ class Select:
 
     def __enter__(self) -> Select:
         self._connection = psycopg2.connect(
-            dbname=self._db_name,
-            user=database["user"],
-            password=database["passwd"],
-            host=database["host"],
-            port=database["port"]
+            POSTGRESQL_DATABASE_URL, sslmode='require'
         )
         self._cursor = self._connection.cursor()
 
@@ -534,11 +522,7 @@ class Update:
 
     def __enter__(self) -> Update:
         self._connection = psycopg2.connect(
-            dbname=self._db_name,
-            user=database["user"],
-            password=database["passwd"],
-            host=database["host"],
-            port=database["port"]
+            POSTGRESQL_DATABASE_URL, sslmode='require'
         )
         self._cursor = self._connection.cursor()
 
@@ -642,11 +626,7 @@ class Delete:
 
     def __enter__(self) -> Delete:
         self._connection = psycopg2.connect(
-            dbname=self._db_name,
-            user=database["user"],
-            password=database["passwd"],
-            host=database["host"],
-            port=database["port"]
+            POSTGRESQL_DATABASE_URL, sslmode='require'
         )
         self._cursor = self._connection.cursor()
 

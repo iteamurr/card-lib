@@ -3,15 +3,14 @@
 """
 from flask import Flask, request, jsonify
 
-from bot.config import telegram
-from bot.tools.handlers import CommandHandler
-from bot.tools.handlers import SessionHandler
-from bot.tools.handlers import CallbackQueryHandler
-
+from .bot.config import TELEGRAM_TOKEN
+from .bot.tools.handlers import CommandHandler
+from .bot.tools.handlers import SessionHandler
+from .bot.tools.handlers import CallbackQueryHandler
 
 app = Flask(__name__)
 
-@app.route(f"/{telegram['token']}", methods=["POST", "GET"])
+@app.route(f"/{TELEGRAM_TOKEN}", methods=["POST", "GET"])
 def get_updates():
     """Get user action.
     """
