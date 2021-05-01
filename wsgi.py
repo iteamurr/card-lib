@@ -3,4 +3,4 @@
 """
 from card_lib import app as application
 
-app = application
+app = application.app
