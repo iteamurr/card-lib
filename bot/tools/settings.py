@@ -81,8 +81,8 @@ class SettingsPanel:
                                 "collections\n\n🔗 /cancel — Cancels the " \
                                 "current operation\n\nYou can send the " \
                                 "/help command at any time to re-appear " \
-                                "this message.\n\n📫 Feedback: @iteamurr" \
-                                "\n🖇 Source Code: [card-lib]" \
+                                "this message.\n\nFeedback: @iteamurr" \
+                                "\nSource Code: [card-lib]" \
                                 "(https://github.com/iteamurr/card-lib)",
                                 "en")
             ins.new_bot_message("private_office", "Private Office", "en")
@@ -243,8 +243,8 @@ class SettingsPanel:
                                 "/cancel — Отмена текущей операции\n\nВ " \
                                 "любой момент ты можешь отправить команду " \
                                 "/help, чтобы вновь появилось это " \
-                                "сообщение.\n\n📫 Обратная связь: @iteamurr" \
-                                "\n🖇 Исходный код: [card-lib](https://" \
+                                "сообщение.\n\nОбратная связь: @iteamurr" \
+                                "\nИсходный код: [card-lib](https://" \
                                 "github.com/iteamurr/card-lib)",
                                 "ru")
             ins.new_bot_message("private_office", "Личный Кабинет", "ru")
@@ -372,7 +372,7 @@ class SettingsPanel:
                                 "Коллекция, по который вы ходите пройти " \
                                 "обучение, пуста. Пожалуйста, добавьте " \
                                 "новые карты в коллекцию и попробуйте " \
-                                "снова начать обучение",
+                                "начать обучение еще раз.",
                                 "ru")
             ins.new_bot_message("an_error_occurred",
                                 "Произошла ошибка. Пожалуйста, "\
