@@ -9,7 +9,8 @@ from typing import Any, Union, Optional, Callable
 from datetime import datetime
 import requests
 
-from ..config import telegram
+from ..config import (TELEGRAM_TOKEN, TELEGRAM_URL, USERS_DATABASE,
+                      COLLECTIONS_DATABASE, MESSAGES_DATABASE)
 from ..tools.database import Select, Insert, Update
 
 
@@ -125,7 +126,7 @@ class API:
             disable_web_page_preview: Disables link previews
                                       for links in this message.
         """
-        url = telegram["url"].format(telegram["token"], "sendMessage")
+        url = TELEGRAM_URL.format(TELEGRAM_TOKEN, "sendMessage")
         body = {"chat_id": chat_id, "text": text}
 
         if parse_mode:
@@ -158,7 +159,7 @@ class API:
             parse_mode: Mode for parsing entities in the message text.
                         Defaults to None.
         """
-        url = telegram["url"].format(telegram["token"], "editMessageText")
+        url = TELEGRAM_URL.format(TELEGRAM_TOKEN, "editMessageText")
         body = {"chat_id": chat_id, "message_id": message_id, "text": text}
 
         if parse_mode:
@@ -184,7 +185,7 @@ class API:
             show_alert: If true, then show a notification with text.
                         Defaults to False.
         """
-        url = telegram["url"].format(telegram["token"], "answerCallbackQuery")
+        url = TELEGRAM_URL.format(TELEGRAM_TOKEN, "answerCallbackQuery")
         body = {"callback_query_id": callback_query_id}
 
         if text:
@@ -234,7 +235,7 @@ class Tools:
         Returns:
             True for success, False otherwise.
         """
-        with Select("bot_users") as select:
+        with Select(USERS_DATABASE) as select:
             user_existence = select.user_attribute(user_id, "locale")
         return bool(user_existence)
 
@@ -251,7 +252,7 @@ class Tools:
         username = message["from"]["username"]
         locale = Tools.define_locale(message["from"]["language_code"])
 
-        with Insert("bot_users") as insert:
+        with Insert(USERS_DATABASE) as insert:
             insert.new_user(user_id, username, locale, menu_id)
 
     @staticmethod
@@ -292,7 +293,7 @@ class Tools:
         Returns:
             session: User session.
         """
-        with Select("bot_users") as select:
+        with Select(USERS_DATABASE) as select:
             session = select.user_attribute(user_id, "session")
         return session
 
@@ -316,7 +317,7 @@ class Tools:
         Returns:
             template: Identified button template.
         """
-        with Select("bot_messages") as select:
+        with Select(MESSAGES_DATABASE) as select:
             identified_name = select.bot_message(name, locale)
 
         template = [f"{identified_name}", f"{header}/{data}"]
@@ -372,7 +373,7 @@ class Tools:
             user_id: Unique identifier of the target user.
             data: user session information.
         """
-        with Update("bot_users") as update:
+        with Update(USERS_DATABASE) as update:
             update.user_attribute(user_id, "locale", data[:2])
 
     @staticmethod
@@ -415,7 +416,7 @@ class Tools:
         Returns:
             True for success, False otherwise.
         """
-        with Select("bot_collections") as select:
+        with Select(COLLECTIONS_DATABASE) as select:
             is_exists = select.collection_without_user_binding(key)
         return bool(is_exists)
 
@@ -430,7 +431,7 @@ class Tools:
         Returns:
             True for success, False otherwise.
         """
-        with Select("bot_collections") as select:
+        with Select(COLLECTIONS_DATABASE) as select:
             is_exists = select.collection_attribute(user_id, key, "name")
         return bool(is_exists)
 
@@ -446,7 +447,7 @@ class Tools:
         Returns:
             True for success, False otherwise.
         """
-        with Select("bot_collections") as select:
+        with Select(COLLECTIONS_DATABASE) as select:
             is_exists = select.card_attribute(user_id, key, card_key, "name")
         return bool(is_exists)
 
@@ -766,7 +767,7 @@ class Errors:
                     any special preferences that the user wants to see in
                     their user interface.
         """
-        with Select("bot_messages") as select:
+        with Select(MESSAGES_DATABASE) as select:
             text = select.bot_message("empty_collection", locale)
 
         API.answer_callback_query(callback_id, text, True)
@@ -790,10 +791,10 @@ class Errors:
             if is_exists:
                 func(self, *args, **kwargs)
             else:
-                with Select("bot_users") as select:
+                with Select(USERS_DATABASE) as select:
                     locale = select.user_attribute(self.user_id, "locale")
 
-                with Select("bot_messages") as select:
+                with Select(MESSAGES_DATABASE) as select:
                     title = select.bot_message("does_not_exist", locale)
 
                 API.answer_callback_query(
@@ -829,10 +830,10 @@ class Errors:
             if collection_exists and card_exists:
                 func(self, *args, **kwargs)
             else:
-                with Select("bot_users") as select:
+                with Select(USERS_DATABASE) as select:
                     locale = select.user_attribute(self.user_id, "locale")
 
-                with Select("bot_messages") as select:
+                with Select(MESSAGES_DATABASE) as select:
                     title = select.bot_message("does_not_exist", locale)
 
                 API.answer_callback_query(

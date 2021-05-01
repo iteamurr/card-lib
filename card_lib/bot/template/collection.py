@@ -3,11 +3,11 @@
 """
 from typing import Any, Optional
 
-from ..config import bot_settings
 from ..shortcuts import CollectionTemplates
 from ..tools.helpers import Bot, Tools, Errors
 from ..tools.database import Select, Insert, Update, Delete
-
+from ..config import (COLLECTIONS_PER_PAGE, USERS_DATABASE,
+                      COLLECTIONS_DATABASE, MESSAGES_DATABASE)
 
 class Collection:
     """Class defining the `Collection` object.
@@ -106,17 +106,17 @@ class Collection:
     def collections(self) -> None:
         """Show all user collections.
         """
-        with Select("bot_users") as select:
+        with Select(USERS_DATABASE) as select:
             self.locale = select.user_attribute(self.user_id, "locale")
             level = select.user_attribute(self.user_id, "page_level")
 
-        with Select("bot_messages") as select:
+        with Select(MESSAGES_DATABASE) as select:
             self.title = select.bot_message("collections", self.locale)
 
-        with Select("bot_collections") as select:
+        with Select(COLLECTIONS_DATABASE) as select:
             collections_list = select.user_collections(self.user_id)
 
-        per_page = bot_settings["collections_per_page"]
+        per_page = COLLECTIONS_PER_PAGE
         navigation = Tools.navigation_creator(
             header="CoLSe",
             number_of_items=len(collections_list),
@@ -137,17 +137,17 @@ class Collection:
     def new_collection(self) -> None:
         """Create a new user collection.
         """
-        with Select("bot_users") as select:
+        with Select(USERS_DATABASE) as select:
             self.locale = select.user_attribute(self.user_id, "locale")
             collections = select.user_attribute(self.user_id, "collections")
 
-        with Select("bot_messages") as select:
+        with Select(MESSAGES_DATABASE) as select:
             self.text = select.bot_message("new_collection", self.locale)
 
-        with Insert("bot_collections") as insert:
+        with Insert(COLLECTIONS_DATABASE) as insert:
             insert.new_collection(self.user_id, self.key, self.message_text)
 
-        with Update("bot_users") as update:
+        with Update(USERS_DATABASE) as update:
             update.user_attribute(self.user_id, "session", None)
             update.user_attribute(
                 user_id=self.user_id,
@@ -164,19 +164,19 @@ class Collection:
     def copy_collection(self) -> None:
         """Copy another user's collection.
         """
-        with Select("bot_users") as select:
+        with Select(USERS_DATABASE) as select:
             self.locale = select.user_attribute(self.user_id, "locale")
             collections = select.user_attribute(self.user_id, "collections")
             cards = select.user_attribute(self.user_id, "cards")
 
-        with Select("bot_messages") as select:
+        with Select(MESSAGES_DATABASE) as select:
             self.text = select.bot_message("copy_collection", self.locale)
 
-        with Insert("bot_collections") as insert:
+        with Insert(COLLECTIONS_DATABASE) as insert:
             new_key = Tools.new_collection_key()
             insert.copy_collection(self.user_id, self.message_text, new_key)
 
-        with Select("bot_collections") as select:
+        with Select(COLLECTIONS_DATABASE) as select:
             new_cards = select.collection_attribute(
                 user_id=self.user_id,
                 key=new_key,
@@ -188,7 +188,7 @@ class Collection:
                 attribute="name"
             )
 
-        with Update("bot_users") as update:
+        with Update(USERS_DATABASE) as update:
             update.user_attribute(self.user_id, "session", None)
             update.user_attribute(
                 user_id=self.user_id,
@@ -212,10 +212,10 @@ class Collection:
     def info(self) -> None:
         """Show collection information menu.
         """
-        with Select("bot_users") as select:
+        with Select(USERS_DATABASE) as select:
             self.locale = select.user_attribute(self.user_id, "locale")
 
-        with Select("bot_collections") as select:
+        with Select(COLLECTIONS_DATABASE) as select:
             name = Tools.text_appearance(
                 select.collection_attribute(self.user_id, self.key, "name")
             )
@@ -227,7 +227,7 @@ class Collection:
                 )
             )
 
-        with Select("bot_messages") as select:
+        with Select(MESSAGES_DATABASE) as select:
             if description:
                 self.title = select.bot_message(
                     data="description_info",
@@ -248,10 +248,10 @@ class Collection:
     def public_key(self) -> None:
         """Collection Public Key menu.
         """
-        with Select("bot_users") as select:
+        with Select(USERS_DATABASE) as select:
             self.locale = select.user_attribute(self.user_id, "locale")
 
-        with Select("bot_messages") as select:
+        with Select(MESSAGES_DATABASE) as select:
             self.title = select.bot_message(
                 data="public_key_text",
                 locale=self.locale
@@ -269,10 +269,10 @@ class Collection:
     def edit_menu(self) -> None:
         """Collection Edit menu.
         """
-        with Select("bot_users") as select:
+        with Select(USERS_DATABASE) as select:
             self.locale = select.user_attribute(self.user_id, "locale")
 
-        with Select("bot_collections") as select:
+        with Select(COLLECTIONS_DATABASE) as select:
             name = Tools.text_appearance(
                 select.collection_attribute(self.user_id, self.key, "name")
             )
@@ -284,7 +284,7 @@ class Collection:
                 )
             )
 
-        with Select("bot_messages") as select:
+        with Select(MESSAGES_DATABASE) as select:
             self.title = select.bot_message(
                 data="description_info",
                 locale=self.locale
@@ -302,10 +302,10 @@ class Collection:
     def delete_menu(self) -> None:
         """Delete collection menu.
         """
-        with Select("bot_users") as select:
+        with Select(USERS_DATABASE) as select:
             self.locale = select.user_attribute(self.user_id, "locale")
 
-        with Select("bot_messages") as select:
+        with Select(MESSAGES_DATABASE) as select:
             self.title = select.bot_message(
                 data="delete_confirmation",
                 locale=self.locale
@@ -322,23 +322,23 @@ class Collection:
     def delete_confirmation(self) -> None:
         """Collection deletion confirmation menu.
         """
-        with Select("bot_users") as select:
+        with Select(USERS_DATABASE) as select:
             self.locale = select.user_attribute(self.user_id, "locale")
             collections = select.user_attribute(self.user_id, "collections")
             cards = select.user_attribute(self.user_id, "cards")
             page_level = select.user_attribute(self.user_id, "page_level")
 
-        with Select("bot_collections") as select:
+        with Select(COLLECTIONS_DATABASE) as select:
             collection_cards = select.collection_attribute(
                 user_id=self.user_id,
                 key=self.key,
                 attribute="cards"
             )
 
-        with Delete("bot_collections") as delete:
+        with Delete(COLLECTIONS_DATABASE) as delete:
             delete.collection(self.user_id, self.key)
 
-        with Update("bot_users") as update:
+        with Update(USERS_DATABASE) as update:
             update.user_attribute(
                 user_id=self.user_id,
                 attribute="collections",
@@ -356,7 +356,7 @@ class Collection:
                     value=page_level - 1
                 )
 
-        with Select("bot_messages") as select:
+        with Select(MESSAGES_DATABASE) as select:
             self.title = select.bot_message("collection_deleted", self.locale)
 
         self.menu = CollectionTemplates.delete_confirmation_template(
@@ -368,15 +368,15 @@ class Collection:
     def add_collection_session(self) -> None:
         """Change current user session to collection creation session.
         """
-        with Select("bot_users") as select:
+        with Select(USERS_DATABASE) as select:
             self.locale = select.user_attribute(self.user_id, "locale")
 
-        with Select("bot_messages") as select:
+        with Select(MESSAGES_DATABASE) as select:
             self.text = select.bot_message("create_collection", self.locale)
 
         session = f"UsrCoLSe/create/{Tools.new_collection_key()}"
 
-        with Update("bot_users") as update:
+        with Update(USERS_DATABASE) as update:
             update.user_attribute(self.user_id, "session", session)
 
     @Errors.collection_existence_check
@@ -387,11 +387,11 @@ class Collection:
         """
         attribute = self.session_data.split("_")[1]
 
-        with Select("bot_users") as select:
+        with Select(USERS_DATABASE) as select:
             self.locale = select.user_attribute(self.user_id, "locale")
             self.message_id = select.user_attribute(self.user_id, "menu_id")
 
-        with Update("bot_collections") as update:
+        with Update(COLLECTIONS_DATABASE) as update:
             update.collection_attribute(
                 user_id=self.user_id,
                 key=self.key,
@@ -399,16 +399,16 @@ class Collection:
                 value=self.message_text
             )
 
-        with Update("bot_users") as update:
+        with Update(USERS_DATABASE) as update:
             update.user_attribute(self.user_id, "session", None)
 
-        with Select("bot_messages") as select:
+        with Select(MESSAGES_DATABASE) as select:
             self.text = select.bot_message(
                 data=f"collection_{attribute}_changed",
                 locale=self.locale
             )
 
-        with Select("bot_collections") as select:
+        with Select(COLLECTIONS_DATABASE) as select:
             name = Tools.text_appearance(
                 select.collection_attribute(self.user_id, self.key, "name")
             )
@@ -420,7 +420,7 @@ class Collection:
                 )
             )
 
-        with Select("bot_messages") as select:
+        with Select(MESSAGES_DATABASE) as select:
             self.title = select.bot_message(
                 data="description_info",
                 locale=self.locale
@@ -444,23 +444,23 @@ class Collection:
         """
         key = f"UsrCoLSe/edit_{attribute}/{self.key}"
 
-        with Select("bot_users") as select:
+        with Select(USERS_DATABASE) as select:
             self.locale = select.user_attribute(self.user_id, "locale")
 
-        with Select("bot_messages") as select:
+        with Select(MESSAGES_DATABASE) as select:
             self.text = select.bot_message(
                 data=f"edit_collection_{attribute}",
                 locale=self.locale
             )
 
-        with Update("bot_users") as update:
+        with Update(USERS_DATABASE) as update:
             update.user_attribute(self.user_id, "session", key)
             update.user_attribute(self.user_id, "menu_id", self.message_id)
 
     def _change_level(self) -> None:
         """Change the layer containing the user's collections.
         """
-        with Update("bot_users") as update:
+        with Update(USERS_DATABASE) as update:
             update.user_attribute(
                 user_id=self.user_id,
                 attribute="page_level",

@@ -130,6 +130,3 @@ dmypy.json
 
 # VSCode settings
 .vscode
-
-# Project settings
-config.py

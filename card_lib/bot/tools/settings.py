@@ -4,7 +4,8 @@
 import requests
 
 from .database import Insert, CreateTable
-from ..config import telegram
+from ..config import (TELEGRAM_TOKEN, TELEGRAM_URL, USERS_DATABASE,
+                      COLLECTIONS_DATABASE, MESSAGES_DATABASE)
 
 
 class SettingsPanel:
@@ -14,16 +15,16 @@ class SettingsPanel:
     def first_launch_of_bot() -> None:
         """Configure the bot for the first launch.
         """
-        with CreateTable("bot_messages") as create:
+        with CreateTable(MESSAGES_DATABASE) as create:
             create.bot_messages()
 
-        with CreateTable("bot_users") as create:
+        with CreateTable(USERS_DATABASE) as create:
             create.bot_users()
 
-        with CreateTable("bot_collections") as create:
+        with CreateTable(COLLECTIONS_DATABASE) as create:
             create.bot_collections()
 
-        with CreateTable("bot_collections") as create:
+        with CreateTable(COLLECTIONS_DATABASE) as create:
             create.bot_cards()
 
         SettingsPanel.ru_insert_messages()
@@ -36,8 +37,8 @@ class SettingsPanel:
         Args:
             web: The address of the site where the bot is running.
         """
-        url = telegram["url"].format(telegram["token"], "setWebhook")
-        body = {"url": f"{web}/{telegram['token']}"}
+        url = TELEGRAM_URL.format(TELEGRAM_TOKEN, "setWebhook")
+        body = {"url": f"{web}/{TELEGRAM_TOKEN}"}
 
         requests.post(url, data=body)
 
@@ -48,8 +49,8 @@ class SettingsPanel:
         Args:
             web: The address of the site where the bot is running.
         """
-        url = telegram["url"].format(telegram["token"], "deleteWebhook")
-        body = {"url": f"{web}/{telegram['token']}"}
+        url = TELEGRAM_URL.format(TELEGRAM_TOKEN, "deleteWebhook")
+        body = {"url": f"{web}/{TELEGRAM_TOKEN}"}
 
         requests.post(url, data=body)
 
@@ -57,7 +58,7 @@ class SettingsPanel:
     def en_insert_messages() -> None:
         """Insert messages in English to the bot phrases database
         """
-        with Insert("bot_messages") as ins:
+        with Insert(MESSAGES_DATABASE) as ins:
             # Main
             ins.new_bot_message("start",
                                 "Hey! I am @card\\_lib\\_bot — a bot that " \
@@ -217,7 +218,7 @@ class SettingsPanel:
     def ru_insert_messages() -> None:
         """Writing messages in Russian to the bot phrases database.
         """
-        with Insert("bot_messages") as ins:
+        with Insert(MESSAGES_DATABASE) as ins:
             # Main
             ins.new_bot_message("start",
                                 "Привет! Я @card\\_lib\\_bot — бот, который " \

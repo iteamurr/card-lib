@@ -3,11 +3,11 @@
 """
 from typing import Any, Callable
 
-from ..config import bot_settings
 from ..tools.helpers import Bot, Tools
 from ..tools.database import Select, Update
 from ..shortcuts import MenuTemplates, CollectionTemplates
-
+from ..config import (COLLECTIONS_PER_PAGE, USERS_DATABASE,
+                      COLLECTIONS_DATABASE, MESSAGES_DATABASE)
 
 class Menu:
     """Class defining the `Menu` object.
@@ -74,10 +74,10 @@ class Menu:
     def private_office(self) -> None:
         """User private office template.
         """
-        with Select("bot_users") as select:
+        with Select(USERS_DATABASE) as select:
             self.locale = select.user_attribute(self.user_id, "locale")
 
-        with Select("bot_messages") as select:
+        with Select(MESSAGES_DATABASE) as select:
             self.text = select.bot_message("private_office", self.locale)
 
         self.menu = MenuTemplates.private_office_template(self.locale)
@@ -85,10 +85,10 @@ class Menu:
     def start(self) -> None:
         """User start text template.
         """
-        with Select("bot_users") as select:
+        with Select(USERS_DATABASE) as select:
             self.locale = select.user_attribute(self.user_id, "locale")
 
-        with Select("bot_messages") as select:
+        with Select(MESSAGES_DATABASE) as select:
             self.text = select.bot_message("start", self.locale)
 
         self.parse_mode = "Markdown"
@@ -99,10 +99,10 @@ class Menu:
     def settings(self) -> None:
         """User settings template.
         """
-        with Select("bot_users") as select:
+        with Select(USERS_DATABASE) as select:
             self.locale = select.user_attribute(self.user_id, "locale")
 
-        with Select("bot_messages") as select:
+        with Select(MESSAGES_DATABASE) as select:
             self.text = select.bot_message("settings", self.locale)
 
         self.menu = MenuTemplates.settings_template(self.locale)
@@ -112,10 +112,10 @@ class Menu:
         """
         locale_list = {"en": "English", "ru": "Русский"}
 
-        with Select("bot_users") as select:
+        with Select(USERS_DATABASE) as select:
             self.locale = select.user_attribute(self.user_id, "locale")
 
-        with Select("bot_messages") as select:
+        with Select(MESSAGES_DATABASE) as select:
             self.text = select.bot_message(
                 data="current_language",
                 locale=self.locale
@@ -127,17 +127,17 @@ class Menu:
     def collections(self) -> None:
         """User collections template.
         """
-        with Select("bot_users") as select:
+        with Select(USERS_DATABASE) as select:
             self.locale = select.user_attribute(self.user_id, "locale")
             level = select.user_attribute(self.user_id, "page_level")
 
-        with Select("bot_messages") as select:
+        with Select(MESSAGES_DATABASE) as select:
             self.text = select.bot_message("collections", self.locale)
 
-        with Select("bot_collections") as select:
+        with Select(COLLECTIONS_DATABASE) as select:
             collections_list = select.user_collections(self.user_id)
 
-        per_page = bot_settings["collections_per_page"]
+        per_page = COLLECTIONS_PER_PAGE
         navigation = Tools.navigation_creator(
             header="CoLsSe",
             number_of_items=len(collections_list),
@@ -157,13 +157,13 @@ class Menu:
     def cancel(self) -> None:
         """Cancel current operation.
         """
-        with Update("bot_users") as update:
+        with Update(USERS_DATABASE) as update:
             update.user_attribute(self.user_id, "session", None)
 
-        with Select("bot_users") as select:
+        with Select(USERS_DATABASE) as select:
             self.locale = select.user_attribute(self.user_id, "locale")
 
-        with Select("bot_messages") as select:
+        with Select(MESSAGES_DATABASE) as select:
             self.text = select.bot_message("cancel", self.locale)
 
     def _callback_query_init(self) -> None:
