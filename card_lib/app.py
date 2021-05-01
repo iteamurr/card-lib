@@ -9,7 +9,9 @@ from .bot.tools.handlers import SessionHandler
 from .bot.tools.handlers import CallbackQueryHandler
 from .bot.tools.settings import SettingsPanel
 
-
+SettingsPanel.first_launch_of_bot()
+SettingsPanel.ru_insert_messages()
+SettingsPanel.en_insert_messages()
 app = Flask(__name__)
 
 @app.route(f"/{TELEGRAM_TOKEN}", methods=["POST", "GET"])
@@ -40,7 +42,4 @@ def get_updates():
     return "<h1>Error!</h1>"
 
 if __name__ == "__main__":
-    SettingsPanel.first_launch_of_bot()
-    SettingsPanel.ru_insert_messages()
-    SettingsPanel.en_insert_messages()
     app.run()
