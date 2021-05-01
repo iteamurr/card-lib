@@ -26,7 +26,6 @@ class CommandHandler:
         self.message = message
         self.user_id = None
         self.command = None
-        self.entity = None
 
         # Retrieving details from a user's message.
         self._session_initialization()
@@ -35,33 +34,31 @@ class CommandHandler:
         """Handler defines the command and sends the menu.
         """
 
-        if self.entity == "bot_command":
-            self.menu = Menu()
+        self.menu = Menu()
 
-            if "/start" in self.command:
-                self._select_start_text()
+        if "/start" in self.command:
+            self._select_start_text()
 
-            elif "/office" in self.command:
-                self._select_private_office_menu()
+        elif "/office" in self.command:
+            self._select_private_office_menu()
 
-            elif "/settings" in self.command:
-                self._select_settings_menu()
+        elif "/settings" in self.command:
+            self._select_settings_menu()
 
-            elif "/collections" in self.command:
-                self._select_collections_menu()
+        elif "/collections" in self.command:
+            self._select_collections_menu()
 
-            elif "/cancel" in self.command:
-                self._cancel_message()
+        elif "/cancel" in self.command:
+            self._cancel_message()
 
-            else:
-                self._undefined_command()
+        else:
+            self._undefined_command()
 
-            self.menu.send(self.user_id)
+        self.menu.send(self.user_id)
 
     def _session_initialization(self) -> None:
         self.user_id = self.message["chat"]["id"]
         self.command = self.message["text"]
-        self.entity = self.message["entities"][0]["type"]
 
     def _select_start_text(self):
         if not Tools.check_user_existence(self.user_id):

@@ -25,7 +25,8 @@ def get_updates():
         if "message" in updates:
             message = updates["message"]
 
-            if "entities" in message:
+            if ("entities" in message and
+                    message["entities"][0]["type"] == "bot_command"):
                 command_handler = CommandHandler(message)
                 command_handler.handler()
             else:
