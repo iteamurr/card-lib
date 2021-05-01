@@ -171,9 +171,9 @@ class Card:
         else:
             self.next_card()
 
+    @Bot.collection_existence_check
     @Bot.edit_message
     @Bot.answer_callback_query
-    @Bot.collection_existence_check
     def next_card(self) -> None:
         """Get the next card for training.
         """
@@ -188,9 +188,9 @@ class Card:
         )
         self.parse_mode = "Markdown"
 
+    @Bot.card_and_collection_existence_check
     @Bot.edit_message
     @Bot.answer_callback_query
-    @Bot.card_and_collection_existence_check
     def show_answer(self) -> None:
         """Show card description.
         """
@@ -210,9 +210,9 @@ class Card:
         )
         self.parse_mode = "Markdown"
 
+    @Bot.card_and_collection_existence_check
     @Bot.edit_message
     @Bot.answer_callback_query
-    @Bot.card_and_collection_existence_check
     def info(self) -> None:
         """Card Information menu.
         """
@@ -299,9 +299,9 @@ class Card:
         with Update("bot_users") as update:
             update.user_attribute(self.user_id, "session", session)
 
+    @Bot.card_and_collection_existence_check
     @Bot.edit_message
     @Bot.answer_callback_query
-    @Bot.card_and_collection_existence_check
     def delete_menu(self) -> None:
         """Delete card menu.
         """
@@ -318,9 +318,9 @@ class Card:
             self.locale, self.key, self.card_key
         )
 
+    @Bot.card_and_collection_existence_check
     @Bot.edit_message
     @Bot.answer_callback_query
-    @Bot.card_and_collection_existence_check
     def delete_confirmation(self) -> None:
         """Card deletion confirmation menu.
         """
@@ -360,9 +360,9 @@ class Card:
             self.locale, self.key
         )
 
+    @Bot.card_and_collection_existence_check
     @Bot.edit_message
     @Bot.send_message
-    @Bot.card_and_collection_existence_check
     def change_attribute(self) -> None:
         """Change any attribute of the card.
         """
@@ -412,9 +412,9 @@ class Card:
         )
         self.parse_mode = "MarkdownV2"
 
+    @Bot.card_and_collection_existence_check
     @Bot.send_message
     @Bot.answer_callback_query
-    @Bot.card_and_collection_existence_check
     def _edit_attribute_session(self, attribute) -> None:
         key = f"UsrCaRSe/edit_{attribute}/{self.key}/{self.card_key}"
 

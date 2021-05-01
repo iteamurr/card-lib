@@ -203,9 +203,9 @@ class Collection:
             new_key, name
         )
 
+    @Bot.collection_existence_check
     @Bot.edit_message
     @Bot.answer_callback_query
-    @Bot.collection_existence_check
     def info(self) -> None:
         """Collection Information menu.
         """
@@ -236,9 +236,9 @@ class Collection:
         self.menu = CollectionTemplates.info_template(self.locale, self.key)
         self.parse_mode = "MarkdownV2"
 
+    @Bot.collection_existence_check
     @Bot.edit_message
     @Bot.answer_callback_query
-    @Bot.collection_existence_check
     def public_key(self) -> None:
         """Collection Public Key menu.
         """
@@ -256,9 +256,9 @@ class Collection:
         )
         self.parse_mode = "MarkdownV2"
 
+    @Bot.collection_existence_check
     @Bot.edit_message
     @Bot.answer_callback_query
-    @Bot.collection_existence_check
     def edit_menu(self) -> None:
         """Collection Edit menu.
         """
@@ -286,9 +286,9 @@ class Collection:
         )
         self.parse_mode = "MarkdownV2"
 
+    @Bot.collection_existence_check
     @Bot.edit_message
     @Bot.answer_callback_query
-    @Bot.collection_existence_check
     def delete_menu(self) -> None:
         """Delete collection menu.
         """
@@ -305,9 +305,9 @@ class Collection:
             self.locale, self.key
         )
 
+    @Bot.collection_existence_check
     @Bot.edit_message
     @Bot.answer_callback_query
-    @Bot.collection_existence_check
     def delete_confirmation(self) -> None:
         """Collection deletion confirmation menu.
         """
@@ -362,9 +362,9 @@ class Collection:
         with Update("bot_users") as update:
             update.user_attribute(self.user_id, "session", session)
 
+    @Bot.collection_existence_check
     @Bot.edit_message
     @Bot.send_message
-    @Bot.collection_existence_check
     def change_attribute(self) -> None:
         """Change any attribute of the collection.
         """
@@ -408,9 +408,9 @@ class Collection:
         )
         self.parse_mode = "MarkdownV2"
 
+    @Bot.collection_existence_check
     @Bot.send_message
     @Bot.answer_callback_query
-    @Bot.collection_existence_check
     def _edit_attribute_session(self, attribute):
         key = f"UsrCoLSe/edit_{attribute}/{self.key}"
 
