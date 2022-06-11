@@ -15,4 +15,4 @@
   </a>
 </p>
 <h2>About Card Lib</h2>
-Bot for fast learning and memorization
+<p>Bot for fast learning and memorization.</p>
